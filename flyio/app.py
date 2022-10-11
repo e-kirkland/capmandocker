@@ -7,17 +7,18 @@ from flask_cors import CORS
 import slack
 from slackeventsapi import SlackEventAdapter
 
-from .config import Config
-from .models.base import db
-from .models.Settings import Settings
-from .models.Players import Players
-from .models.Rosters import Rosters
+from project.config import Config
+from project.models.base import db
+from project.models.Settings import Settings
+from project.models.Players import Players
+from project.models.Rosters import Rosters
 
 # Instantiate app
 app = Flask(__name__)
 config_obj = Config()
-print("CONFIG OBJECT: ", config_obj)
 app.config.from_object(config_obj)
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_STRING")
+print("DATABASE URL: ", app.config["SQLALCHEMY_DATABASE_URI"])
 db.init_app(app)
 # Enable CORS
 cors = CORS(app)

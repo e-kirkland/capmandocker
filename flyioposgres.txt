@@ -1,0 +1,5 @@
+Username:    postgres
+  Password:    570c22285371d0eef07ccaf6dfa699e22ebb74bfc99614dc
+  Hostname:    capman-db.internal
+  Proxy Port:  5432
+  PG Port: 5433

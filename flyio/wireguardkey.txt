@@ -1,0 +1,12 @@
+
+[Interface]
+PrivateKey = mB6qc/TNqm8LTmpzoVyWXx4UQ0x5r+vKmSQlLMRi2QQ=
+Address = fdaa:0:b87f:a7b:ce2:0:a:2/120
+DNS = fdaa:0:b87f::3
+
+[Peer]
+PublicKey = R2in3C4C5I1AVyoSrmsOgSkhPDKAegwUg6zwkLrhryk=
+AllowedIPs = fdaa:0:b87f::/48
+Endpoint = iad1.gateway.6pn.dev:51820
+PersistentKeepalive = 15
+
