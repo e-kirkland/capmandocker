@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  capman_web:
+    container_name: campan_web
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./:/usr/src/app/
+    ports:
+      - 8080:8080
+    env_file:
+      - ./.local.env
+    environment:
+      - FLASK_ENV=local

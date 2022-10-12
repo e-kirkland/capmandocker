@@ -1,21 +1,15 @@
-#!/bin/sh
+#!/bin/bash
 
-if [ "$DATABASE" = "postgres" ]
+if [ "$FLASK_ENV" = "production" ]
 then
-    echo "Waiting for postgres..."
-
-    while ! nc -z $SQL_HOST $SQL_PORT; do
-      sleep 0.1
-    done
-
-    echo "PostgreSQL started"
+    echo "Starting Flask server in PRODUCTION mode..."
+    # python manage.py create_db
+    exec gunicorn --config /app/gunicorn_config.py project.wsgi:app
 fi
 
-if [ "$FLASK_ENV" = "development" ]
+if [ "$FLASK_ENV" = "local" ]
 then
-    echo "Creating the database tables..."
-    python manage.py create_db
-    echo "Tables created"
+    echo "Starting Flask server in LOCAL mode"
+    # python manage.py create_db
+    python ./project/app.py
 fi
-
-exec "$@"
