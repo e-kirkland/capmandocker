@@ -1,12 +1,15 @@
 # pull official base image
 FROM python:3.9.5-slim-buster
 
+USER root
+
 RUN mkdir /app
 
 # set work directory
 WORKDIR /app
 
 ADD requirements.txt /app
+ADD entrypoint.sh /app
 
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -21,7 +24,7 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 # Copy all files
-COPY . /app
+# COPY . /app
 
 EXPOSE 8080
 EXPOSE 5000

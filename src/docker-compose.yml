@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  capman_web:
+    container_name: capman_web
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./project/models:/app/project/models
+      - ./project/__init__.py:/app/project/__init__.py
+      - ./project/app.py:/app/project/app.py
+      - ./project/config.py:/app/project/config.py
+      - ./project/core.py:/app/project/core.py
+      - ./project/utils.py:/app/project/utils.py
+    ports:
+      - 8080:8080
+    env_file:
+      - ./.local.env
+    environment:
+      - FLASK_ENV=local
+  capman_db:
+    image: postgres:13-alpine
+    container_name: capman_db
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data/
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=hello_flask
+      - POSTGRES_PASSWORD=hello_flask
+      - POSTGRES_DB=hello_flask_dev

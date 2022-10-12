@@ -109,6 +109,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+*.env
+*.local.env
 
 # Spyder project settings
 .spyderproject
@@ -131,3 +133,4 @@ dmypy.json
 # Postgres data
 postgres_data
 postgres_data_prod
+web/postgres_data

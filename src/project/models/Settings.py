@@ -1,6 +1,6 @@
-from ..core import Mixin
-from ..utils import get_current_time
-from .base import db
+from core import Mixin
+from utils import get_current_time
+from models.base import db
 from sqlalchemy_utils import UUIDType
 from sqlalchemy import ForeignKey, orm
 from sqlalchemy.orm import relationship

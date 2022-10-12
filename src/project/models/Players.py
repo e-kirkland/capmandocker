@@ -1,6 +1,6 @@
-from ..core import Mixin
-from ..utils import get_current_time
-from .base import db
+from core import Mixin
+from utils import get_current_time
+from models.base import db
 from sqlalchemy_utils import UUIDType
 from sqlalchemy import ForeignKey, orm
 from sqlalchemy.orm import relationship
@@ -28,9 +28,7 @@ class Players(db.Model, Mixin):
 
     @classmethod
     def get_by_roster_id(cls, roster_id):
-        return (
-            db.session.query(Players).filter(Players.roster_id == roster_id).all()
-        )
+        return db.session.query(Players).filter(Players.roster_id == roster_id).all()
 
     @classmethod
     def upsert_player(cls, player):

@@ -11,5 +11,6 @@ if [ "$FLASK_ENV" = "local" ]
 then
     echo "Starting Flask server in LOCAL mode"
     # python manage.py create_db
-    python ./project/app.py
+    python /app/project/app.py
+
 fi
