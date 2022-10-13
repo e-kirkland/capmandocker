@@ -8,9 +8,14 @@ services:
       dockerfile: Dockerfile.dev
     volumes:
       - ./project/models:/app/project/models
+      - ./project/views:/app/project/views
+      - ./project/scripts:/app/project/scripts
+      - ./project/media:/app/project/media
+      - ./project/static:/app/project/static
       - ./project/__init__.py:/app/project/__init__.py
       - ./project/app.py:/app/project/app.py
       - ./project/config.py:/app/project/config.py
+      - ./project/slackbot.py:/app/project/slackbot.py
       - ./project/core.py:/app/project/core.py
       - ./project/utils.py:/app/project/utils.py
     ports:
@@ -19,6 +24,7 @@ services:
       - ./.local.env
     environment:
       - FLASK_ENV=local
+    restart: on-failure
   capman_db:
     image: postgres:13-alpine
     container_name: capman_db

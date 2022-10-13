@@ -15,7 +15,7 @@ class Settings(db.Model, Mixin):
     id = db.Column(
         UUIDType(binary=False), primary_key=True, default=uuid.uuid4, unique=True
     )
-    league_id = db.Column(db.Integer, nullable=False)
+    league_id = db.Column(db.String, nullable=False)
     salary_cap = db.Column(db.Integer, nullable=False)
     roster_min = db.Column(db.Integer, nullable=False)
     roster_max = db.Column(db.Integer, nullable=False)
@@ -27,9 +27,8 @@ class Settings(db.Model, Mixin):
 
     @classmethod
     def get_by_league_id(cls, league_id):
-        return (
-            db.session.query(Settings).filter(Settings.league_id == league_id).first()
-        )
+        return cls.query.filter_by(league_id=league_id).first()
+        # return db.session.query(Settings).filter(Settings.league_id == league_id)
 
     @classmethod
     def upsert_settings(cls, settings):

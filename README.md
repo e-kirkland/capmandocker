@@ -13,3 +13,8 @@ To deploy:
 To activate psql shell:
     flyctl postgres connect -a capman-db
     \c capman
+
+## SSH
+
+To access shell:
+    flyctl ssh console

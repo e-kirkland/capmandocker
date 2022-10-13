@@ -1,4 +1,5 @@
 import os
+import json
 
 from dotenv import load_dotenv
 
@@ -24,3 +25,13 @@ class Config(object):
     USER_TOKEN = f"{os.getenv('SLACK_USER_TOKEN')}"
     SECRET = f"{os.getenv('SLACK_SECRET')}"
     ALERT_CHANNEL = f"{os.getenv('ALERT_CHANNEL')}"
+
+    # Load json file
+    ROSTER_FILE = f"{os.getenv('ROSTER_FILE')}"
+    ROSTER_FILEPATH = MEDIA_FOLDER + "/" + ROSTER_FILE
+    print("ROSTER FULL FILEPATH: ", ROSTER_FILEPATH, flush=True)
+    try:
+        with open(ROSTER_FILEPATH) as f:
+            ROSTER_DATA = json.load(f)
+    except Exception as e:
+        ROSTER_DATA = {}
