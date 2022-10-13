@@ -323,3 +323,81 @@ def file_upload(payload):
 
             print("EXCEPTION: ", e, flush=True)
             return 500, str(e)
+
+
+# respond to direct messages
+def slack_message(payload):
+    event = payload.get("event", {})
+    channel_id = event.get("channel")
+    user_id = event.get("user")
+    text = event.get("text").lower()
+
+    # Get rosters to find team info
+    if slackbot.roster_data.get("rosters") is not None:
+        rostersdict = slackbot.roster_data.get("rosters")
+    else:
+        return (
+            400,
+            """No 'rosters' key/value in the league_users.json file.\n
+                   Upload file at http://capman.fly.dev/upload""",
+        )
+
+    if user_id != None and slackbot.BOT_ID != user_id:
+        if "roster" in text:
+            team_info = rostersdict[user_id]
+            roster_id = team_info["roster_id"]
+            url = team_info["url"]
+            slackbot.client.chat_postMessage(
+                channel=channel_id, text="Retrieving your roster, just a moment..."
+            )
+            teamname = utils.get_team_name(roster_id)
+            slackbot.client.chat_postMessage(channel=channel_id, text=str(teamname))
+            roster = utils.get_my_roster(roster_id)
+            slackbot.client.chat_postMessage(channel=channel_id, text=str(roster))
+            slackbot.client.chat_postMessage(
+                channel=channel_id,
+                text="",
+                blocks=[
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"View your roster here: <{url}>",
+                        },
+                    }
+                ],
+            )
+            return 200, "Successfully retrieved roster"
+        elif "cap" in text:
+            team_info = rostersdict[user_id]
+            roster_id = team_info["roster_id"]
+            url = team_info["url"]
+            slackbot.client.chat_postMessage(
+                channel=channel_id, text="Calculating your cap space, hang on..."
+            )
+            cap = utils.get_my_cap(roster_id, slackbot)
+            slackbot.client.chat_postMessage(channel=channel_id, text=str(cap))
+            slackbot.client.chat_postMessage(
+                channel=channel_id,
+                text="",
+                blocks=[
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"View your roster here: <{url}>",
+                        },
+                    }
+                ],
+            )
+            return 200, "Successfully retrieved cap"
+
+        else:
+            print("NO KEYWORDS FOUND: ", flush=True)
+            slackbot.client.chat_postMessage(
+                channel=channel_id, text="I didn't understand your request, sorry."
+            )
+            return 200, "Responded to message"
+
+    else:
+        return 200, "No response"

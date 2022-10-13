@@ -18,7 +18,7 @@ from views.api import api
 from views.players import players
 from views.rosters import rosters
 from views.settings import settings
-from views.slack import slack, file_upload
+from views.slack import slack, file_upload, slack_message
 from slackbot import Slack
 from core import create_response
 
@@ -90,13 +90,12 @@ def upload_file():
 
 # Slack event adapter for messages
 @slack_event_adapter.on("message")
-def handle_message(event_data):
-    message = event_data["event"]
-    # If the incoming message contains "hi", then respond with a "Hello" message
-    if message.get("subtype") is None and "hi" in message.get("text"):
-        channel = message["channel"]
-        message = "Hello <@%s>! :tada:" % message["user"]
-        slackbot.client.chat_postMessage(channel=channel, text=message)
+def handle_message(payload):
+    print("MESSAGE RECIEVED: ", payload, flush=True)
+
+    status, msg = slack_message(payload)
+
+    return create_response(status=status, message=msg)
 
 
 # Slack event adapter for file upload
