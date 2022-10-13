@@ -222,3 +222,30 @@ def update_settings():
     msg = f"Successfully updated settings with league_id: {_settings.league_id}"
     settings_dict = _settings.to_dict()
     return create_response(status=200, message=msg, data=settings_dict)
+
+
+@slack.route("/salary-reset", methods=["POST"])
+def reset_salaries():
+
+    # Parse info from slack payload
+    _, channel_id, text, league_id = parse_slack_payload(request, slackbot)
+
+    slackbot.client.chat_postMessage(
+        channel=channel_id,
+        text="Looks like you want to revise the league salaries. \nRetrieving league data for you to update, just a moment...",
+    )
+
+    salary_csv_filename = utils.get_salary_csv(slackbot)
+    print("SALARY CSV FILENAME: ", salary_csv_filename, flush=True)
+
+    response = slackbot.client.files_upload(
+        channels=channel_id, file=salary_csv_filename, title="Current League Status"
+    )
+    print("RESPONSE: ", response, flush=True)
+
+    slackbot.client.chat_postMessage(
+        channel=channel_id,
+        text="Here are the current player/roster/salary standings. Edit them and repost here to update the league.",
+    )
+
+    return create_response(status=200, message="Salaries pulled successfully.")

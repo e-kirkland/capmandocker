@@ -41,3 +41,6 @@ class Slack:
         # Get roster names/info
         self.roster_filepath = ROSTER_FILEPATH
         self.roster_data = ROSTER_DATA
+
+        # Save media filepath
+        self.media_folder = MEDIA_FOLDER

@@ -88,3 +88,23 @@ def get_my_cap(roster_id, slackbot):
                        \nAvailable cap room is *${str(available)}*."""
 
     return returnstring
+
+
+def get_salary_csv(slackbot):
+
+    player_df = Players.get_all_players_df()
+
+    # Getting filepath for output csv
+    if slackbot.media_folder is not None:
+        media_folder = slackbot.media_folder
+    else:
+        return create_response(
+            status=400,
+            message="""No 'MEDIA_FOLDER' found. Check the .env file.""",
+        )
+
+    csv_filepath = media_folder + "/players.csv"
+
+    player_df.to_csv(csv_filepath, index=None)
+
+    return csv_filepath

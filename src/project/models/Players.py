@@ -44,6 +44,16 @@ class Players(db.Model, Mixin):
         return Players.query.order_by(Players.roster_id.asc()).all()
 
     @classmethod
+    def get_all_players_df(cls):
+        # Returning pandas dataframe from sqlalchemy session
+        return_df = pd.read_sql(
+            db.session.query(Players).statement,
+            db.engine,
+        )
+
+        return return_df
+
+    @classmethod
     def get_df_by_roster_id(cls, roster_id):
         # Returning pandas dataframe from sqlalchemy session
         return_df = pd.read_sql(
