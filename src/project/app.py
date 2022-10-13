@@ -20,27 +20,25 @@ from views.settings import settings
 from views.slack import slack
 
 from config import Config
-from slackbot import Slack
 
 app = Flask(__name__)
 
-# Register blueprints
-DEFAULT_BLUEPRINTS = {api, players, rosters, settings, slack}
-for blueprint in DEFAULT_BLUEPRINTS:
-    app.register_blueprint(blueprint)
+# Publishing app context
+with app.app_context():
+    # Register blueprints
+    DEFAULT_BLUEPRINTS = {api, players, rosters, settings, slack}
+    for blueprint in DEFAULT_BLUEPRINTS:
+        app.register_blueprint(blueprint)
 
-# Establish config variables
-config = Config()
-app.config.from_object(config)
+    # Establish config variables
+    config = Config()
+    app.config.from_object(config)
 
-# Initialize database
-print("DB_URI: ", app.config["SQLALCHEMY_DATABASE_URI"])
-db.init_app(app)
+    # Initialize database
+    print("DB_URI: ", app.config["SQLALCHEMY_DATABASE_URI"])
+    db.init_app(app)
 
-# Instantiating slackbot
-slackbot = Slack(app)
-
-print("ROSTER DATA: ", app.config["ROSTER_DATA"])
+    print("ROSTER DATA: ", app.config["ROSTER_DATA"])
 
 
 @app.route("/")

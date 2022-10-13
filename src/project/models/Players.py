@@ -1,10 +1,6 @@
 from core import Mixin
-from utils import get_current_time
 from models.base import db
-from sqlalchemy_utils import UUIDType
-from sqlalchemy import ForeignKey, orm
-from sqlalchemy.orm import relationship
-import uuid
+import pandas as pd
 
 
 class Players(db.Model, Mixin):
@@ -44,3 +40,13 @@ class Players(db.Model, Mixin):
     @classmethod
     def get_all(cls):
         return Players.query.order_by(Players.roster_id.asc()).all()
+
+    @classmethod
+    def get_df_by_roster_id(cls, roster_id):
+        # Returning pandas dataframe from sqlalchemy session
+        return_df = pd.read_sql(
+            db.session.query(Players).filter(Players.roster_id == roster_id).statement,
+            db.engine,
+        )
+
+        return return_df
