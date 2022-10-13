@@ -13,8 +13,7 @@ slack = Blueprint("slack", __name__, url_prefix="/slack")
 slackbot = Slack(app)
 
 
-@slack.route("/roster", methods=["GET", "POST"])
-def get_roster():
+def parse_slack_payload(request, slackbot):
 
     # Get data from request
     data = request.form
@@ -68,6 +67,17 @@ def get_roster():
         team_info = roster_info[user_id]
         roster_id = team_info["roster_id"]
 
+    return roster_id, channel_id
+
+
+@slack.route("/roster", methods=["GET", "POST"])
+def get_roster():
+
+    # Parse info from slack payload
+    roster_id, channel_id = parse_slack_payload(request, slackbot)
+    print("ROSTER_ID: ", roster_id, flush=True)
+    print("CHANNEL_ID: ", channel_id, flush=True)
+
     slackbot.client.chat_postMessage(
         channel=channel_id, text=f"Retrieving the roster, just a moment..."
     )
@@ -89,6 +99,39 @@ def get_roster():
                 "text": {
                     "type": "mrkdwn",
                     "text": f"View all rosters here: <https://capmanbot.herokuapp.com/>",
+                },
+            }
+        ],
+    )
+
+    return create_response(status=200)
+
+
+@slack.route("/cap", methods=["POST"])
+def get_cap():
+
+    # Parse info from slack payload
+    roster_id, channel_id = parse_slack_payload(request, slackbot)
+
+    # Get cap info
+    returnstring = utils.get_my_cap(roster_id, slackbot)
+
+    slackbot.client.chat_postMessage(
+        channel=channel_id,
+        text="",
+        blocks=[
+            {"type": "section", "text": {"type": "mrkdwn", "text": str(returnstring)}}
+        ],
+    )
+    slackbot.client.chat_postMessage(
+        channel=channel_id,
+        text="",
+        blocks=[
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"View all cap spending here: <https://capmanbod.herokuapp.com/>",
                 },
             }
         ],

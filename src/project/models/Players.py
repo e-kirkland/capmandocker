@@ -1,6 +1,8 @@
+from sqlalchemy import Integer
 from core import Mixin
 from models.base import db
 import pandas as pd
+from sqlalchemy.sql import func as f
 
 
 class Players(db.Model, Mixin):
@@ -50,3 +52,15 @@ class Players(db.Model, Mixin):
         )
 
         return return_df
+
+    @classmethod
+    def get_roster_salary_sum(cls, roster_id):
+        # Returning sum of all salary on team where injured_reserve=False
+        salary_sum = (
+            db.session.query(f.sum(Players.salary.cast(Integer)))
+            .filter(Players.roster_id == roster_id)
+            .filter(Players.injured_reserve == False)
+            .scalar()
+        )
+
+        return salary_sum
