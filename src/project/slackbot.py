@@ -4,6 +4,8 @@ import json
 import slack
 from slackeventsapi import SlackEventAdapter
 from dotenv import load_dotenv
+import pandas as pd
+
 
 
 class Slack:
@@ -21,7 +23,7 @@ class Slack:
         print("ALERT_CHANNEL: ", self.alert_channel)
 
         # Instantiate slack client
-        self.slack_event_adapter = SlackEventAdapter(self.secret, "/slack/events", app)
+        # self.slack_event_adapter = SlackEventAdapter(self.secret, "/slack/events", app)
         self.client = slack.WebClient(token=self.bot_token)
 
         # Check slack credentials

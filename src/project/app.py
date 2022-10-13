@@ -8,6 +8,7 @@ sys.path.append(append_path)
 from werkzeug.utils import secure_filename
 from flask import Flask, jsonify, send_from_directory, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+from slackeventsapi import SlackEventAdapter
 
 from models.base import db
 from models.Settings import Settings
@@ -17,7 +18,10 @@ from views.api import api
 from views.players import players
 from views.rosters import rosters
 from views.settings import settings
-from views.slack import slack
+from views.slack import slack, file_upload
+from slackbot import Slack
+from core import create_response
+
 
 from config import Config
 
@@ -39,6 +43,10 @@ with app.app_context():
     db.init_app(app)
 
     print("ROSTER DATA: ", app.config["ROSTER_DATA"])
+
+    # Instantiating slackbot
+    slackbot = Slack(app)
+    slack_event_adapter = SlackEventAdapter(slackbot.secret, "/events", app)
 
 
 @app.route("/")
@@ -78,6 +86,27 @@ def upload_file():
         <p><input type=file name=file><input type=submit value=Upload>
     </form>
     """
+
+
+# Slack event adapter for messages
+@slack_event_adapter.on("message")
+def handle_message(event_data):
+    message = event_data["event"]
+    # If the incoming message contains "hi", then respond with a "Hello" message
+    if message.get("subtype") is None and "hi" in message.get("text"):
+        channel = message["channel"]
+        message = "Hello <@%s>! :tada:" % message["user"]
+        slackbot.client.chat_postMessage(channel=channel, text=message)
+
+
+# Slack event adapter for file upload
+@slack_event_adapter.on("file_shared")
+def file_shared(payload):
+    print("FILE FOUND", flush=True)
+
+    status, msg = file_upload(payload)
+
+    return create_response(status=status, message=msg)
 
 
 if __name__ == "__main__":

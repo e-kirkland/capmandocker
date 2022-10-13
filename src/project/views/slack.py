@@ -1,7 +1,12 @@
+import re
+import os
+
 from flask import Blueprint, request, jsonify
 from flask import current_app as app
 from slackeventsapi import SlackEventAdapter
 from dotenv import load_dotenv
+import slack as slack_lib
+import requests
 
 from slackbot import Slack
 from core import create_response
@@ -13,6 +18,7 @@ slack = Blueprint("slack", __name__, url_prefix="/slack")
 
 # Instantiating slackbot
 slackbot = Slack(app)
+# slack_event_adapter = SlackEventAdapter(slackbot.secret, "/events", app)
 
 
 def parse_slack_payload(request, slackbot):
@@ -249,3 +255,71 @@ def reset_salaries():
     )
 
     return create_response(status=200, message="Salaries pulled successfully.")
+
+
+# Recognize shared files
+def file_upload(payload):
+    print("FILE FOUND", flush=True)
+    event = payload.get("event", {})
+    channel_id = event.get("channel_id")
+    user_id = event.get("user_id")
+
+    print("EVENT: ", event, flush=True)
+
+    if event != None and slackbot.BOT_ID != user_id:
+
+        slackbot.client.chat_postMessage(
+            channel=channel_id,
+            text="Roster file received. Give me a moment to update the league...",
+        )
+
+        file = event["file_id"]
+        channel = event["channel_id"]
+
+        try:
+            print("USER TOKEN: ", slackbot.user_token, flush=True)
+            user_client = slack_lib.WebClient(token=slackbot.user_token)
+            print("USER_CLIENT: ", user_client, flush=True)
+            print("MAKING API CALL USING FILE: ", file, flush=True)
+
+            result = user_client.api_call(
+                "files.info", params={"file": file, "token": slackbot.user_token}
+            )
+
+            url = result["file"]["url_private_download"]
+            print("RESULT FILE URL: ", url)
+
+            resp = requests.get(
+                url, headers={"Authorization": "Bearer %s" % slackbot.user_token}
+            )
+
+            print("RESP: ", resp.headers, flush=True)
+
+            headers = resp.headers["content-disposition"]
+            output = slackbot.media_folder + "/"
+            fname = output + re.findall("filename=(.*?);", headers)[0].strip("'").strip(
+                '"'
+            )
+
+            if os.path.exists(fname):
+
+                return 400, "File already exists. Please remove/rename and re-run"
+
+            out_file = open(fname, mode="wb+")
+            print("FNAME: ", fname, flush=True)
+            out_file.write(resp.content)
+            out_file.close()
+
+            response = utils.reset_salary_data(fname)
+            print("RESPONSE: ", response, flush=True)
+
+            slackbot.client.chat_postMessage(
+                channel=channel_id, text="League updated, you are ready to roll!"
+            )
+
+            return 200, response
+
+        except Exception as e:
+
+            print("EXCEPTION: ", e, flush=True)
+            return 500, str(e)

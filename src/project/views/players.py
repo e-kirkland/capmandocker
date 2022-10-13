@@ -14,18 +14,28 @@ def players_upsert_df(df):
     # Create Player object and upsert
     for item in df_json:
         try:
-            _player = Players(
-                player_id=str(item["player_id"]),
-                player=str(item["player"]),
-                position=str(item["position"]),
-                team=str(item["team"]),
-                salary=str(item["salary"]),
-                roster_id=int(item["roster_id"]),
-                injured_reserve=bool(item["injured_reserve"]),
-                war=float(item["war"]),
-                value=float(item["value"]),
-            )
-            Players.upsert_player(_player)
+
+            # Pull player and check if existing
+            _players = Players.get_by_player_id(str(item["player_id"]))
+            # If player does not exist, create record and insert
+            if not _players:
+
+                _player = Players(
+                    player_id=str(item["player_id"]),
+                    player=str(item["player"]),
+                    position=str(item["position"]),
+                    team=str(item["team"]),
+                    salary=str(item["salary"]),
+                    roster_id=int(item["roster_id"]),
+                    injured_reserve=bool(item["injured_reserve"]),
+                    war=float(item["war"]),
+                    value=float(item["value"]),
+                )
+                Players.upsert_player(_player)
+
+            else:
+                _returnPlayer = upsert_player(item["player_id"], item)
+
         except Exception as e:
             print("ERROR: ", e, flush=True)
             raise e
@@ -36,7 +46,7 @@ def players_upsert_df(df):
 def upsert_player(player_id, data):
 
     # Pull player and check if existing
-    _players = Players.get_by_player_id(player_id)
+    _players = Players.get_by_player_id(str(player_id))
     if not _players:
         return create_response(status=400, message="player_id not found")
 

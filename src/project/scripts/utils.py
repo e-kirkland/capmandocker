@@ -1,8 +1,11 @@
+import pandas as pd
+
 from core import create_response
 
 from models.Rosters import Rosters
 from models.Players import Players
 from models.Settings import Settings
+from views.players import players_upsert_df
 
 
 def get_roster_id(text, lookupdict):
@@ -108,3 +111,33 @@ def get_salary_csv(slackbot):
     player_df.to_csv(csv_filepath, index=None)
 
     return csv_filepath
+
+
+def reset_salary_data(fname):
+
+    try:
+
+        # Open csv as df
+        df = pd.read_csv(fname)
+
+        # Format for push to postgres
+        keepcols = [
+            "player_id",
+            "player",
+            "position",
+            "team",
+            "salary",
+            "roster_id",
+            "injured_reserve",
+            "war",
+            "value",
+        ]
+        df = df[keepcols]
+
+        msg = players_upsert_df(df)
+
+        return "SUCCESSFULLY UPDATED LEAGUE"
+
+    except Exception as e:
+
+        return f"FAILED UPLOADING TO POSTGRES: {e}"
