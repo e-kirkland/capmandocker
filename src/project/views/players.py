@@ -33,21 +33,7 @@ def players_upsert_df(df):
     return jsonify(msg="Successfully inserted all players")
 
 
-@players.route("/roster/<roster_id>", methods=["GET"])
-def get_players_by_roster_id(roster_id):
-    players = Players.get_by_roster_id(roster_id)
-
-    return create_response(status=200, data={"players": serialize_list(players)})
-
-
-@players.route("/<player_id>", methods=["PUT"])
-def update_player_by_player_id(player_id):
-    # Get requested data
-    data = request.get_json()
-
-    # Check for player_id
-    if not player_id:
-        return create_response(status=400, message="Must include player_id as a param")
+def upsert_player(player_id, data):
 
     # Pull player and check if existing
     _players = Players.get_by_player_id(player_id)
@@ -74,6 +60,52 @@ def update_player_by_player_id(player_id):
 
     # Upsert player
     Players.upsert_player(_players)
+
+    return _players
+
+
+@players.route("/roster/<roster_id>", methods=["GET"])
+def get_players_by_roster_id(roster_id):
+    players = Players.get_by_roster_id(roster_id)
+
+    return create_response(status=200, data={"players": serialize_list(players)})
+
+
+@players.route("/roster/<roster_id>", methods=["PUT"])
+def update_players_by_roster_id(roster_id):
+    # Get requested data
+    data = request.get_json()
+
+    if not data.get("players"):
+        create_response(
+            status=400, message="Requires JSON payload with 'players' key/value"
+        )
+
+    players_list = data.get("players")
+    print("PLAYERS LIST: ", players_list, flush=True)
+
+    for idx, player in enumerate(players_list):
+        print(
+            f"UPDATING PLAYER {idx+1}/{len(players_list)}: ",
+            player["player_id"],
+            flush=True,
+        )
+        player_id = player["player_id"]
+        _player = upsert_player(player_id, player)
+
+    return create_response(status=200, message="Successfully updated all players.")
+
+
+@players.route("/<player_id>", methods=["PUT"])
+def update_player_by_player_id(player_id):
+    # Get requested data
+    data = request.get_json()
+
+    # Check for player_id
+    if not player_id:
+        return create_response(status=400, message="Must include player_id as a param")
+
+    _players = upsert_player(player_id, data)
 
     msg = f"Successfully updated player settings for {_players.player}"
     player_dict = _players.to_dict()

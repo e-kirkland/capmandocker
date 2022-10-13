@@ -13,32 +13,33 @@ slack = Blueprint("slack", __name__, url_prefix="/slack")
 slackbot = Slack(app)
 
 
-@slack.route("/roster", methods=["POST"])
+@slack.route("/roster", methods=["GET", "POST"])
 def get_roster():
 
     # Get data from request
     data = request.form
-    data = request.get_json()
+    print("DATA FROM FORM: ", data, flush=True)
+
     try:
         data.get("")
         print("DATA: ", data, flush=True)
     except AttributeError as e:
-        return create_response(status=400, message="Must includ JSON payload")
+        return create_response(status=400, message="Must include form payload")
 
     if data.get("channel_id") is not None:
         channel_id = data.get("channel_id")
     else:
-        return create_response(status=400, message="JSON must include channel_id")
+        return create_response(status=400, message="Form data must include channel_id")
 
     if data.get("user_id") is not None:
         user_id = data.get("user_id")
     else:
-        return create_response(status=400, message="JSON must include user_id")
+        return create_response(status=400, message="Form data must include user_id")
 
     if data.get("text") is not None:
         text = data.get("text")
     else:
-        return create_response(status=400, message="JSON must include 'text' item")
+        return create_response(status=400, message="Form data must include 'text' item")
 
     if slackbot.roster_data.get("lookupdict") is not None:
         lookupdict = slackbot.roster_data.get("lookupdict")
@@ -93,4 +94,4 @@ def get_roster():
         ],
     )
 
-    return create_response(status=200, message=roster)
+    return create_response(status=200)
