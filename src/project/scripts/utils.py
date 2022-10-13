@@ -36,8 +36,6 @@ def get_my_roster(roster_id):
 
     rosterdf = Players.get_df_by_roster_id(roster_id)
 
-    print("ROSTER DF: ", rosterdf.head(), flush=True)
-
     rosterdf.sort_values(by=["position", "salary"], inplace=True)
 
     rosterdf["salary"] = rosterdf["salary"].apply(lambda x: str(x))
@@ -65,9 +63,9 @@ def get_my_roster(roster_id):
 
 def get_my_cap(roster_id, slackbot):
 
-    print("GETTING SALARY SUM FOR ROSTER_ID: ", roster_id, flush=True)
     salary_sum = Players.get_roster_salary_sum(roster_id)
-    print("CURRENT SALARY SUM: ", salary_sum)
+
+    team_name = get_team_name(roster_id)
 
     # Getting league_id
     if slackbot.roster_data.get("league_id") is not None:
@@ -85,6 +83,8 @@ def get_my_cap(roster_id, slackbot):
 
     available = current_cap - salary_sum
 
-    returnstring = f"Current cap spending is *${str(salary_sum)}*. \n\nAvailable cap room is *${str(available)}*."
+    returnstring = f"""CAP AVAILABILITY FOR *{team_name}*:
+                       \nCurrent cap spending is *${str(salary_sum)}*.
+                       \nAvailable cap room is *${str(available)}*."""
 
     return returnstring

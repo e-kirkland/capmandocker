@@ -1,8 +1,10 @@
+from tokenize import String
 from core import Mixin
 from utils import get_current_time
 from models.base import db
 from sqlalchemy_utils import UUIDType
 from sqlalchemy import ForeignKey, orm
+from sqlalchemy import String
 from sqlalchemy.orm import relationship
 from flask import jsonify
 import pandas as pd
@@ -22,7 +24,11 @@ class Rosters(db.Model, Mixin):
 
     @classmethod
     def get_by_roster_id(cls, roster_id):
-        return db.session.query(Rosters).filter(Rosters.roster_id == roster_id).first()
+        return (
+            db.session.query(Rosters)
+            .filter(Rosters.roster_id.cast(String) == str(roster_id))
+            .first()
+        )
 
     @classmethod
     def upsert_roster(cls, roster):

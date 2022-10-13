@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from slackbot import Slack
 from core import create_response
 from scripts import utils
+from scripts.league import init_league
+from models.Settings import Settings
 
 slack = Blueprint("slack", __name__, url_prefix="/slack")
 
@@ -17,11 +19,9 @@ def parse_slack_payload(request, slackbot):
 
     # Get data from request
     data = request.form
-    print("DATA FROM FORM: ", data, flush=True)
 
     try:
         data.get("")
-        print("DATA: ", data, flush=True)
     except AttributeError as e:
         return create_response(status=400, message="Must include form payload")
 
@@ -49,6 +49,15 @@ def parse_slack_payload(request, slackbot):
                    Upload file at http://capman.fly.dev/upload""",
         )
 
+    if slackbot.roster_data.get("league_id") is not None:
+        league_id = slackbot.roster_data.get("league_id")
+    else:
+        return create_response(
+            status=400,
+            message="""No 'league_id' key/value in the league_users.json file.\n
+                   Upload file at http://capman.fly.dev/upload""",
+        )
+
     # If text is supplied, search for roster_id and supply information
     if len(text) != 0:
         roster_id = utils.get_roster_id(text, lookupdict)
@@ -67,14 +76,14 @@ def parse_slack_payload(request, slackbot):
         team_info = roster_info[user_id]
         roster_id = team_info["roster_id"]
 
-    return roster_id, channel_id
+    return roster_id, channel_id, text, league_id
 
 
 @slack.route("/roster", methods=["GET", "POST"])
 def get_roster():
 
     # Parse info from slack payload
-    roster_id, channel_id = parse_slack_payload(request, slackbot)
+    roster_id, channel_id, _, _ = parse_slack_payload(request, slackbot)
     print("ROSTER_ID: ", roster_id, flush=True)
     print("CHANNEL_ID: ", channel_id, flush=True)
 
@@ -111,7 +120,7 @@ def get_roster():
 def get_cap():
 
     # Parse info from slack payload
-    roster_id, channel_id = parse_slack_payload(request, slackbot)
+    roster_id, channel_id, _, _ = parse_slack_payload(request, slackbot)
 
     # Get cap info
     returnstring = utils.get_my_cap(roster_id, slackbot)
@@ -138,3 +147,78 @@ def get_cap():
     )
 
     return create_response(status=200)
+
+
+@slack.route("/initialize", methods=["POST"])
+def initialize_league():
+
+    # Parse info from slack payload
+    _, channel_id, text, _ = parse_slack_payload(request, slackbot)
+
+    # Pull leagueID, salaryCap, rosterMin, rosterMax from text
+    text_list = text.split(" ")
+    leagueID = text_list[0]
+    salaryCap = text_list[1]
+    rosterMin = text_list[2]
+    rosterMax = text_list[3]
+
+    # Setting up league
+    slackbot.client.chat_postMessage(
+        channel=channel_id,
+        text=f"Let's do this. Setting up your league with id {leagueID}...",
+    )
+
+    try:
+        msg = init_league(leagueID, salaryCap, rosterMin, rosterMax)
+
+        # Confirming league setup
+        slackbot.client.chat_postMessage(
+            channel=channel_id,
+            text=f"Your league is set up. Now it's time to fill in salary info.",
+        )
+
+        return create_response(status=200, message="League successfully initialized!")
+
+    except Exception as e:
+        print("EXCEPTION: ", e, flush=True)
+
+        return create_response(status=500, message=e)
+
+
+@slack.route("/settings", methods=["POST"])
+def update_settings():
+
+    # Parse info from slack payload
+    _, channel_id, text, league_id = parse_slack_payload(request, slackbot)
+
+    # Pull salaryCap, rosterMin, rosterMax from text
+    text_list = text.split(" ")
+    salaryCap = text_list[0]
+    rosterMin = text_list[1]
+    rosterMax = text_list[2]
+
+    # Check for league_id
+    if not league_id:
+        return create_response(status=400, message="Must include league_id as a param")
+
+    # Pull setting and check if existing
+    _settings = Settings.get_by_league_id(str(league_id))
+    if not _settings:
+        return create_response(
+            status=400, message="league_id not found in settings table"
+        )
+
+    # Store new values
+    if salaryCap is not None:
+        _settings.salary_cap = int(salaryCap)
+    if rosterMin is not None:
+        _settings.roster_min = int(rosterMin)
+    if rosterMax is not None:
+        _settings.roster_max = int(rosterMax)
+
+    # Upsert settings
+    Settings.upsert_settings(_settings)
+
+    msg = f"Successfully updated settings with league_id: {_settings.league_id}"
+    settings_dict = _settings.to_dict()
+    return create_response(status=200, message=msg, data=settings_dict)
