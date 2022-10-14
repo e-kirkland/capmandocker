@@ -54,17 +54,23 @@ with app.app_context():
     dash_app = Dash(__name__, server=app, url_base_pathname="/web/")
 
     player_df = Players.get_all_players_df()
-    player_df = player_df.sort_values(by=["roster_id"], ascending=True)
+    player_df = player_df.sort_values(by=["roster_id", "war"], ascending=[True, False])
+
+    dt_col_param = []
+    for col in player_df.columns:
+        dt_col_param.append({"name": str(col), "id": str(col)})
+    print("PLAYER DF: ", player_df.head(), flush=True)
+    player_dict = player_df.to_dict(orient="records")
+    print("PLAYER DICT: ", player_dict)
 
     dash_app.layout = html.Div(
         [
             dash_table.DataTable(
                 id="table-editing-simple",
-                columns=player_df.columns,
-                data=player_df.to_dict(orient="records"),
+                columns=dt_col_param,
+                data=player_df.to_dict("records"),
                 editable=False,
             ),
-            dcc.Graph(id="table-editing-simple-output"),
         ]
     )
 
