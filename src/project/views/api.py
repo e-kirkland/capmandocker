@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 
 from models.base import db
 from scripts.league import init_league
+from scripts.sleeper import check_transaction
 from core import create_response
 
 api = Blueprint("api", __name__, url_prefix="/api")
@@ -44,3 +45,22 @@ def setup_league():
     msg = init_league(leagueID, salaryCap, rosterMin, rosterMax)
 
     return create_response(status=200, message="League successfully initialized!")
+
+
+@api.route("/checkTransactions", methods=["GET"])
+def check_transactions():
+    print("Checking transactions!", flush=True)
+
+    # Retrieving arguments, ensuring all are passed properly
+    if request.args.get("leagueID") is not None:
+        leagueID = request.args.get("leagueID")
+    else:
+        return create_response(status=400, message="Must include leagueID as a param")
+
+    try:
+        msg = check_transaction(leagueID)
+        return create_response(status=200, message=msg)
+
+    except Exception as e:
+        print(f"CHECK TRANSACTION EXCEPTION: {e}", flush=True)
+        return create_response(status=500, message=str(e))

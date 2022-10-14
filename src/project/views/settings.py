@@ -66,3 +66,27 @@ def update_settings_by_league_id(league_id):
     msg = f"Successfully updated settings with league_id: {_settings.league_id}"
     settings_dict = _settings.to_dict()
     return create_response(status=200, message=msg, data=settings_dict)
+
+def update_settings_internal(league_id, data):
+
+    # Pull setting and check if existing
+    _settings = Settings.get_by_league_id(league_id)
+    if not _settings:
+        return f"NO SETTINGS FOUND FOR LEAGUE ID: {league_id}"
+
+    # Store new values
+    if data.get("salary_cap") is not None:
+        _settings.salary_cap = data["salary_cap"]
+    if data.get("roster_min") is not None:
+        _settings.roster_min = data["roster_min"]
+    if data.get("roster_max") is not None:
+        _settings.roster_max = data["roster_max"]
+    if data.get("transaction_id") is not None:
+        _settings.transaction_id = data["transaction_id"]
+
+    # Upsert settings
+    Settings.upsert_settings(_settings)
+
+    msg = f"Successfully updated settings with league_id: {_settings.league_id}"
+    
+    return msg

@@ -4,8 +4,10 @@ from sleeper_wrapper import League, Players
 import pandas as pd
 
 from models.Rosters import Rosters
+from models.Settings import Settings
 from views.players import players_upsert_df
 from views.rosters import records_upsert_df
+from scripts import utils
 
 
 def get_transactions(leagueID):
@@ -46,6 +48,40 @@ def get_most_recent_transaction(transactions):
     print("TRANSACTION: ", transactionid)
 
     return str(transactionid)
+
+
+def check_transaction(leagueID):
+
+    try:
+
+        transactions = get_transactions(leagueID)
+        print("ALL TRANSACTIONS: ", transactions, flush=True)
+
+        transactionID = get_most_recent_transaction(transactions)
+        print("LATEST TRANSACTION FOUND: ", transactionID, flush=True)
+
+        _settings = Settings.get_by_league_id(leagueID)
+        lastTransaction = _settings.transaction_id
+        print("LAST STORED TRANSACTIN: ", lastTransaction, flush=True)
+
+        if int(transactionID) <= int(lastTransaction):
+            print("SAME TRANSACTION, NO NEED TO UPDATE", flush=True)
+            return "NO UPDATE"
+
+        elif int(transactionID) > int(lastTransaction):
+            print("NEW TRANSACTIONS FOUND, NEED TO UPDATE ROSTERS")
+            msg = utils.update_from_transactions(transactions, lastTransaction)
+
+            msg = utils.store_most_recent_transaction(leagueID, transactionID)
+
+            return msg
+
+        else:
+            return "NO TRANSACTIONS PROCESSED"
+
+    except Exception as e:
+
+        return f"TRANSACTION UPATE ERROR: {e}"
 
 
 def get_players():

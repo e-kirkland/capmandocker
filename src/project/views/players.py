@@ -120,3 +120,48 @@ def update_player_by_player_id(player_id):
     msg = f"Successfully updated player settings for {_players.player}"
     player_dict = _players.to_dict()
     return create_response(status=200, message=msg, data=player_dict)
+
+
+def drop_player(player_id):
+
+    # Build drop dictionary for player
+    data = {
+        "roster_id": '999',
+        "salary": 0,
+        "injured_reserve": False
+    }
+
+    # Upsert player
+    _player = upsert_player(player_id, data)
+
+    return _player
+
+
+def add_player(player_id, roster_id, salary=None):
+
+    # Build add dictionary for player
+
+    data = {
+        "roster_id": str(roster_id)
+    }
+
+    if salary:
+        data["salary"] = int(salary)
+
+    # Upsert player
+    _player = upsert_player(player_id, data)
+
+    return _player
+
+
+def trade_player(player_id, roster_id):
+
+    # Build trade dictionary for player
+    data = {
+        "roster_id": str(roster_id)
+    }
+
+    # Upsert player
+    _player = upsert_player(player_id, data)
+
+    return _player
