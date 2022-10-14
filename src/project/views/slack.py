@@ -401,3 +401,15 @@ def slack_message(payload):
 
     else:
         return 200, "No response"
+
+
+def get_league_id():
+
+    if slackbot.roster_data.get("league_id") is not None:
+        league_id = slackbot.roster_data.get("league_id")
+    else:
+        print("""No 'league_id' key/value in the league_users.json file.\n
+                   Upload file at http://capman.fly.dev/upload""", flush=True)
+        return None
+
+    return league_id

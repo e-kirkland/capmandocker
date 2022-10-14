@@ -4,6 +4,7 @@ from models.base import db
 from sqlalchemy_utils import UUIDType
 from sqlalchemy import ForeignKey, orm
 from sqlalchemy.orm import relationship
+import pandas as pd
 import uuid
 
 
@@ -45,3 +46,13 @@ class Settings(db.Model, Mixin):
     @classmethod
     def get_all(cls):
         return Settings.query.order_by(Settings.league_id.asc()).all()
+
+    @classmethod
+    def get_league_settings_df(cls, league_id):
+        # Returning pandas dataframe from sqlalchemy session
+        return_df = pd.read_sql(
+            db.session.query(Settings.league_id==str(league_id)).statement,
+            db.engine,
+        )
+
+        return return_df

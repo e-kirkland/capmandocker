@@ -58,3 +58,13 @@ class Rosters(db.Model, Mixin):
         db.session.add_all(batch)
         db.session.commit()
         return
+
+    @classmethod
+    def get_all_rosters_df(cls):
+        # Returning pandas dataframe from sqlalchemy session
+        return_df = pd.read_sql(
+            db.session.query(Rosters).statement,
+            db.engine,
+        )
+
+        return return_df

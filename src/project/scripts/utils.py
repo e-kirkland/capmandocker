@@ -310,3 +310,44 @@ def store_most_recent_transaction(leagueID, lastTransaction):
     print(msg, flush=True)
 
     return msg
+
+def check_league_compliance(cap, rosterMin, rosterMax):
+    
+    # Get all rosters
+    teamsdf = Rosters.get_all_rosters_df()
+
+    roster_ids = [x for x in teamsdf['roster_id']]
+
+    # Empty list for collecting problematic teams
+    problemdata = []
+    for n in range(0, len(roster_ids)):
+        id = roster_ids[n]
+        team_name = teamsdf["display_name"][n]
+
+        # Get players for this roster
+        teamdf = Players.get_df_by_roster_id(id)
+        rosterdf = teamdf[teamdf["injured_reserve"]==False]
+        players_total = len(rosterdf)
+        teamsalary = Players.get_roster_salary_sum(id)
+        print(f"SALARY: cap ${cap}, total: ${teamsalary}", flush=True)
+        print(f"PLAYER TOTAL: min: {rosterMin}, max: {rosterMax}, roster: {players_total}", flush=True)
+
+        if (
+            (int(teamsalary) > int(cap))
+            | (int(players_total) < rosterMin)
+            | (int(players_total) > rosterMax)
+        ):
+            print(f"{team_name} NOT IN COMPLIANCE: {teamsalary}, {players_total}", flush=True)
+
+            error_team = [team_name, teamsalary, players_total]
+            problemdata.append(error_team)
+
+        else:
+            print(f"{team_name} IN COMPLIANCE")
+            pass
+
+    if len(problemdata) > 0:
+        return problemdata
+
+    else:
+        return None

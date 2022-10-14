@@ -2,9 +2,12 @@ from flask import Blueprint, request, jsonify
 from sqlalchemy import create_engine
 
 from models.base import db
+from models.Settings import Settings
 from scripts.league import init_league
 from scripts.sleeper import check_transaction
 from core import create_response
+from views.slack import get_league_id, slackbot
+from scripts.utils import check_league_compliance
 
 api = Blueprint("api", __name__, url_prefix="/api")
 
@@ -64,3 +67,39 @@ def check_transactions():
     except Exception as e:
         print(f"CHECK TRANSACTION EXCEPTION: {e}", flush=True)
         return create_response(status=500, message=str(e))
+
+
+@api.route("/checkCompliance", methods=["GET"])
+def check_compliance():
+
+    # Get settings from table
+    league_id = get_league_id()
+    if not league_id:
+        return create_response(
+            status=500, message="Could not parse league_id from league_users.json file"
+        )
+    _settings = Settings.get_by_league_id(league_id)
+    cap = _settings.salary_cap
+    rosterMin = _settings.roster_min
+    rosterMax = _settings.roster_max
+
+    # Update transactions
+    result = check_transaction(league_id)
+
+    # Check compliance
+    compliance_result = check_league_compliance(cap, rosterMin, rosterMax)
+
+    if compliance_result:
+        for result in compliance_result:
+            team_name = result[0]
+            salary = result[1]
+            count = result[2]
+            print("MESSGING VIA SLACK: ", slackbot.alert_channel, flush=True)
+            slackbot.client.chat_postMessage(
+                channel=slackbot.alert_channel,
+                text=f"Team {team_name} is out of compliance!\nSalary: ${salary}\nRoster count: {count}",
+            )
+
+        return create_response(status=200, message="TEAMS NOTIFIED")
+    else:
+        return create_response(status=200, message="ALL TEAMS IN COMPLIANCE")
