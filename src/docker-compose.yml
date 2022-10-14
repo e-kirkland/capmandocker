@@ -10,6 +10,7 @@ services:
       - ./project/models:/app/project/models
       - ./project/views:/app/project/views
       - ./project/scripts:/app/project/scripts
+      - ./project/web:/app/project/web
       - ./project/media:/app/project/media
       - ./project/static:/app/project/static
       - ./project/__init__.py:/app/project/__init__.py

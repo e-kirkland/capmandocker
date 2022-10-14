@@ -11,6 +11,7 @@ from flask_sqlalchemy import SQLAlchemy
 from slackeventsapi import SlackEventAdapter
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from dash import Dash, dash_table, dcc, html
 
 from models.base import db
 from models.Settings import Settings
@@ -50,6 +51,23 @@ with app.app_context():
     slackbot = Slack(app)
     slack_event_adapter = SlackEventAdapter(slackbot.secret, "/events", app)
 
+    dash_app = Dash(__name__, server=app, url_base_pathname="/web/")
+
+    player_df = Players.get_all_players_df()
+    player_df = player_df.sort_values(by=["roster_id"], ascending=True)
+
+    dash_app.layout = html.Div(
+        [
+            dash_table.DataTable(
+                id="table-editing-simple",
+                columns=player_df.columns,
+                data=player_df.to_dict(orient="records"),
+                editable=False,
+            ),
+            dcc.Graph(id="table-editing-simple-output"),
+        ]
+    )
+
 
 # Instantiating scheduler
 sched = BackgroundScheduler(daemon=True)
@@ -64,6 +82,12 @@ def hello_world():
     player_df = player_df.sort_values(by=["war"], ascending=False)
     player_df = player_df[player_df["roster_id"] == 999]
     return player_df.to_json(orient="records")
+
+
+@app.route("/web/")
+def dashboard():
+
+    return dash_app.index()
 
 
 @app.route("/initialize/", methods=["GET"])
