@@ -106,5 +106,20 @@
             "big",
             "home"
         ]
+    },
+    "scoring": {
+        "passing_yards_multiplier": 0.04,
+        "passing_td_multiplier": 6,
+        "passing_2pt_multiplier": 2,
+        "interceptions_multiplier": -2,
+        "rushing_yards_multiplier": 0.1,
+        "rushing_td_multiplier": 6,
+        "rushing_2pt_multiplier": 2,
+        "sack_fumbles_lost_multiplier": 2,
+        "rushing_fumbles_lost_multiplier": 2,
+        "receptions_multiplier": 1,
+        "receiving_yards_multiplier": 0.1,
+        "receiving_td_multiplier": 6,
+        "receiving_2pt_multiplier": 2
     }
 }

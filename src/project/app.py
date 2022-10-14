@@ -60,7 +60,10 @@ sched.start()
 
 @app.route("/")
 def hello_world():
-    return jsonify(hello="world")
+    player_df = Players.get_all_players_df()
+    player_df = player_df.sort_values(by=["war"], ascending=False)
+    player_df = player_df[player_df["roster_id"] == 999]
+    return player_df.to_json(orient="records")
 
 
 @app.route("/initialize/", methods=["GET"])

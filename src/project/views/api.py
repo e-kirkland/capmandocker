@@ -1,13 +1,16 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy import create_engine
+import traceback
 
 from models.base import db
 from models.Settings import Settings
 from scripts.league import init_league
 from scripts.sleeper import check_transaction
+from scripts.war import update_league_war
 from core import create_response
 from views.slack import get_league_id, slackbot
 from scripts.utils import check_league_compliance
+from scripts.war import update_league_war
 
 api = Blueprint("api", __name__, url_prefix="/api")
 
@@ -102,3 +105,19 @@ def check_compliance():
         return create_response(status=200, message="TEAMS NOTIFIED")
     else:
         return create_response(status=200, message="ALL TEAMS IN COMPLIANCE")
+
+
+@api.route("/getWAR", methods=["GET"])
+def get_war():
+
+    try:
+
+        msg = update_league_war()
+
+        return create_response(status=200, message=msg)
+
+    except Exception as e:
+
+        msg = traceback.print_exc()
+
+        return create_response(status=500, message=msg)

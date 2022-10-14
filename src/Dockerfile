@@ -14,7 +14,7 @@ ENV PYTHONBUFFERED 1
 ENV FLASK_ENV production
 
 # install system dependencies
-RUN apt-get update && apt-get install -y netcat
+RUN apt-get update && apt-get install -y netcat && apt-get install -y gcc
 
 # install dependencies
 RUN pip install --upgrade pip
