@@ -9,12 +9,14 @@ from werkzeug.utils import secure_filename
 from flask import Flask, jsonify, send_from_directory, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from slackeventsapi import SlackEventAdapter
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 
 from models.base import db
 from models.Settings import Settings
 from models.Players import Players
 from models.Rosters import Rosters
-from views.api import api
+from views.api import api, check_compliance
 from views.players import players
 from views.rosters import rosters
 from views.settings import settings
@@ -47,6 +49,13 @@ with app.app_context():
     # Instantiating slackbot
     slackbot = Slack(app)
     slack_event_adapter = SlackEventAdapter(slackbot.secret, "/events", app)
+
+
+# Instantiating scheduler
+sched = BackgroundScheduler(daemon=True)
+sched.add_job(check_compliance, "interval", minutes=30)
+# sched.add_job(get_war, "interval", hours=24)
+sched.start()
 
 
 @app.route("/")

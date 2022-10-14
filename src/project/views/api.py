@@ -94,7 +94,6 @@ def check_compliance():
             team_name = result[0]
             salary = result[1]
             count = result[2]
-            print("MESSGING VIA SLACK: ", slackbot.alert_channel, flush=True)
             slackbot.client.chat_postMessage(
                 channel=slackbot.alert_channel,
                 text=f"Team {team_name} is out of compliance!\nSalary: ${salary}\nRoster count: {count}",
