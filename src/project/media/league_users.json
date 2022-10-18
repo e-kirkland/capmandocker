@@ -3,43 +3,43 @@
     "rosters": {
         "U011KTB2AMQ": {
             "roster_id": 1,
-            "url": "https://capmanbot.herokuapp.com/#/TrustTheProcess"
+            "url": "https://capman.fly.dev"
         },
         "U232RJNTH": {
             "roster_id": 2,
-            "url": "https://capmanbot.herokuapp.com/#/TampaBayBadgers"
+            "url": "https://capman.fly.dev"
         },
         "U24588NAK": {
             "roster_id": 3,
-            "url": "https://capmanbot.herokuapp.com/#/EssendonBombers"
+            "url": "https://capman.fly.dev"
         },
         "U9CQGJH0S": {
             "roster_id": 4,
-            "url": "https://capmanbot.herokuapp.com/#/KickersAndQBs"
+            "url": "https://capman.fly.dev"
         },
         "U235B6YP2": {
             "roster_id": 5,
-            "url": "https://capmanbot.herokuapp.com/#/TheClevelandSteamers"
+            "url": "https://capman.fly.dev"
         },
         "UBV333PT8": {
             "roster_id": 6,
-            "url": "https://capmanbot.herokuapp.com/#/GTechNick"
+            "url": "https://capman.fly.dev"
         },
         "U236W3RAM": {
             "roster_id": 7,
-            "url": "https://capmanbot.herokuapp.com/#/AtkinsonRules"
+            "url": "https://capman.fly.dev"
         },
         "U232X98MS": {
             "roster_id": 8,
-            "url": "https://capmanbot.herokuapp.com/#/AcworthEagles"
+            "url": "https://capman.fly.dev"
         },
         "U9FL1AP2B": {
             "roster_id": 9,
-            "url": "https://capmanbot.herokuapp.com/#/BeatsByRay"
+            "url": "https://capman.fly.dev"
         },
         "U235EHWBC": {
             "roster_id": 10,
-            "url": "https://capmanbot.herokuapp.com/#/GoBigOrGoHome"
+            "url": "https://capman.fly.dev"
         }
     },
     "lookupdict": {

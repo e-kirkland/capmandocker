@@ -1,3 +1,5 @@
+import os
+
 from dash import Dash, dash_table, dcc, html, callback_context
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
@@ -5,11 +7,15 @@ import dash_bootstrap_components as dbc
 from flask import current_app as app
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 from models.Players import Players
 from models.Rosters import Rosters
+from models.Settings import Settings
+from models.Rosters import Rosters
 from views.players import upsert_player
-from web import all_players, dashboard
+from web import all_players, dashboard, rosters, tradeview
+from dotenv import load_dotenv
 
 
 def diff_dashtable(data, data_previous, row_id_name="player_id"):
@@ -104,6 +110,8 @@ def get_layout():
 
 
 def get_dash_app(app, pathname="/web/"):
+
+    load_dotenv()
 
     # Bootstrap theme
     external_stylesheets = [dbc.themes.COSMO]
@@ -201,7 +209,7 @@ def get_dash_app(app, pathname="/web/"):
 
         dt_col_param = []
         for col in player_df.columns:
-            dt_col_param.append({"name": str(col), "id": str(col)})
+            dt_col_param.append({"name": str(col).upper(), "id": str(col)})
         player_dict = player_df.to_dict(orient="records")
 
         return player_dict, dt_col_param
@@ -297,9 +305,9 @@ def get_dash_app(app, pathname="/web/"):
         if pathname == "/dashboard":
             return dashboard.layout
         elif pathname == "/rosters":
-            return all_players.layout
+            return rosters.layout
         elif pathname == "/tradeview":
-            return all_players.layout
+            return tradeview.layout
         elif pathname == "/allplayers":
             return all_players.layout
         else:
@@ -309,7 +317,9 @@ def get_dash_app(app, pathname="/web/"):
     def roster_bar_chart(n):
         player_dict, player_df, dt_col_param = get_player_data()
         claimed_players = player_df[player_df["roster_id"] != 999]
-        roster_count_df = claimed_players.groupby("roster_id")["player"].count()
+        active_players = claimed_players[claimed_players["injured_reserve"] != True]
+        print("ACTIVE PLAYERS: ", active_players.head(), flush=True)
+        roster_count_df = active_players.groupby("roster_id")["player"].count()
         roster_count_df = roster_count_df.reset_index()
         roster_count_df["roster_id"] = roster_count_df["roster_id"].astype(str)
 
@@ -332,9 +342,9 @@ def get_dash_app(app, pathname="/web/"):
     @dash_app.callback(Output("bar-salary", "figure"), [Input("url", "pathname")])
     def salary_bar_chart(n):
         player_dict, player_df, dt_col_param = get_player_data()
-        claimed_players = player_df[player_df["roster_id"] != 999]
-        print("CLAIMED PLAYERS: ", claimed_players.shape, flush=True)
-        roster_count_df = claimed_players.groupby("roster_id")["salary"].sum()
+        active_players = player_df[player_df["roster_id"] != 999]
+        active_players["salary"] = active_players["salary"].astype(int)
+        roster_count_df = active_players.groupby("roster_id")["salary"].sum()
         roster_count_df = roster_count_df.reset_index()
         roster_count_df["roster_id"] = roster_count_df["roster_id"].astype(str)
 
@@ -344,16 +354,241 @@ def get_dash_app(app, pathname="/web/"):
             roster_df, left_on="roster_id", right_on="roster_id"
         )
 
-        print("ROSTER DF: ", merged.tail(), flush=True)
-
         fig = px.bar(
             merged,
             x="display_name",
             y="salary",
             labels={"salary": "Total Cap Spend", "display_name": "Team"},
-            title="Salary Cap Spend (Not Including Injured Reserve)",
+            title="Salary Cap Spend",
         )
 
         return fig
+
+    @dash_app.callback(
+        Output("indicator-settings", "figure"), [Input("url", "pathname")]
+    )
+    def settings_indicators(n):
+        league_id = app.config["ROSTER_DATA"]["league_id"]
+        _settings = Settings.get_by_league_id(league_id)
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Indicator(
+                mode="number",
+                value=_settings.salary_cap,
+                number={"prefix": "$"},
+                title={"text": "Salary Cap"},
+                domain={"row": 0, "column": 0},
+            )
+        )
+
+        fig.add_trace(
+            go.Indicator(
+                mode="number",
+                value=_settings.roster_min,
+                # number={"prefix": "$"},
+                title={"text": "Roster Min"},
+                domain={"row": 0, "column": 1},
+            )
+        )
+
+        fig.add_trace(
+            go.Indicator(
+                mode="number",
+                value=_settings.roster_max,
+                # number={"prefix": "$"},
+                title={"text": "Roster Max"},
+                domain={"row": 0, "column": 2},
+            )
+        )
+
+        fig.update_layout(
+            grid={"rows": 1, "columns": 3, "pattern": "independent"},
+            margin=dict(l=20, r=20, t=0, b=0),
+            height=150,
+            width=700,
+        )
+
+        return fig
+
+    @dash_app.callback(
+        Output("roster-dynamic-dropdown", "options"),
+        Input("roster-dynamic-dropdown", "search_value"),
+    )
+    def update_options(search_value):
+
+        roster_df = Rosters.get_all_rosters_df()
+        roster_df = roster_df.sort_values(by=["display_name"], ascending=True)
+        roster_options = []
+        for index, row in roster_df.iterrows():
+            roster_options.append(
+                {"label": row["display_name"], "value": row["roster_id"]}
+            )
+
+        return roster_options
+
+    @dash_app.callback(
+        [Output("single-roster-data", "data"), Output("single-roster-data", "columns")],
+        [Input("roster-dynamic-dropdown", "value")],
+    )
+    def get_single_roster_data_callback(value):
+        print("TRIGGERED: ", value, flush=True)
+        player_df = Players.get_all_players_df()
+        player_df = player_df[player_df["roster_id"] == int(value)]
+        player_df = player_df.sort_values(
+            by=["roster_id", "position", "war"], ascending=[True, True, False]
+        )
+        keepcols = [
+            "player",
+            "position",
+            "team",
+            "salary",
+            "war",
+            "value",
+            "injured_reserve",
+        ]
+        player_df = player_df[keepcols]
+
+        dt_col_param = []
+        for col in player_df.columns:
+            dt_col_param.append({"name": str(col).upper(), "id": str(col)})
+        player_dict = player_df.to_dict(orient="records")
+
+        return player_dict, dt_col_param
+
+    @dash_app.callback(
+        Output("indicator-rosters", "figure"),
+        [Input("roster-dynamic-dropdown", "value")],
+    )
+    def roster_indicators(value):
+        player_df = Players.get_all_players_df()
+        player_df = player_df[player_df["roster_id"] == int(value)]
+        player_df["salary"] = player_df["salary"].astype(int)
+        salary_total = player_df["salary"].sum()
+
+        active_df = player_df[player_df["injured_reserve"] != True]
+        active_roster = len(active_df)
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Indicator(
+                mode="number",
+                value=salary_total,
+                number={"prefix": "$"},
+                title={"text": "Salary Spend"},
+                domain={"row": 0, "column": 0},
+            )
+        )
+
+        fig.add_trace(
+            go.Indicator(
+                mode="number",
+                value=active_roster,
+                # number={"prefix": "$"},
+                title={"text": "Roster Size"},
+                domain={"row": 0, "column": 1},
+            )
+        )
+
+        fig.update_layout(
+            grid={"rows": 1, "columns": 2, "pattern": "independent"},
+            margin=dict(l=20, r=20, t=0, b=0),
+            height=150,
+            width=700,
+        )
+
+        return fig
+
+    @dash_app.callback(
+        Output("left-dynamic-dropdown", "options"),
+        Input("left-dynamic-dropdown", "search_value"),
+    )
+    def left_update_options(search_value):
+
+        roster_df = Rosters.get_all_rosters_df()
+        roster_df = roster_df.sort_values(by=["display_name"], ascending=True)
+        roster_options = []
+        for index, row in roster_df.iterrows():
+            roster_options.append(
+                {"label": row["display_name"], "value": row["roster_id"]}
+            )
+
+        return roster_options
+
+    @dash_app.callback(
+        [Output("left-roster-data", "data"), Output("left-roster-data", "columns")],
+        [Input("left-dynamic-dropdown", "value")],
+    )
+    def get_left_roster_data_callback(value):
+        print("TRIGGERED: ", value, flush=True)
+        player_df = Players.get_all_players_df()
+        player_df = player_df[player_df["roster_id"] == int(value)]
+        player_df = player_df.sort_values(
+            by=["roster_id", "position", "war"], ascending=[True, True, False]
+        )
+        keepcols = [
+            "player",
+            "position",
+            "team",
+            "salary",
+            "war",
+            "value",
+            "injured_reserve",
+        ]
+        player_df = player_df[keepcols]
+
+        dt_col_param = []
+        for col in player_df.columns:
+            dt_col_param.append({"name": str(col).upper(), "id": str(col)})
+        player_dict = player_df.to_dict(orient="records")
+
+        return player_dict, dt_col_param
+
+    @dash_app.callback(
+        Output("right-dynamic-dropdown", "options"),
+        Input("right-dynamic-dropdown", "search_value"),
+    )
+    def right_options(search_value):
+
+        roster_df = Rosters.get_all_rosters_df()
+        roster_df = roster_df.sort_values(by=["display_name"], ascending=True)
+        roster_options = []
+        for index, row in roster_df.iterrows():
+            roster_options.append(
+                {"label": row["display_name"], "value": row["roster_id"]}
+            )
+
+        return roster_options
+
+    @dash_app.callback(
+        [Output("right-roster-data", "data"), Output("right-roster-data", "columns")],
+        [Input("right-dynamic-dropdown", "value")],
+    )
+    def get_right_roster_data_callback(value):
+        print("TRIGGERED: ", value, flush=True)
+        player_df = Players.get_all_players_df()
+        player_df = player_df[player_df["roster_id"] == int(value)]
+        player_df = player_df.sort_values(
+            by=["roster_id", "position", "war"], ascending=[True, True, False]
+        )
+        keepcols = [
+            "player",
+            "position",
+            "team",
+            "salary",
+            "war",
+            "value",
+            "injured_reserve",
+        ]
+        player_df = player_df[keepcols]
+
+        dt_col_param = []
+        for col in player_df.columns:
+            dt_col_param.append({"name": str(col).upper(), "id": str(col)})
+        player_dict = player_df.to_dict(orient="records")
+
+        return player_dict, dt_col_param
 
     return dash_app

@@ -113,7 +113,7 @@ def get_roster():
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"View all rosters here: <https://capmanbot.herokuapp.com/>",
+                    "text": f"View all rosters here: <https://capman.fly.dev/>",
                 },
             }
         ],
