@@ -24,7 +24,7 @@ from views.settings import settings
 from views.slack import slack, file_upload, slack_message
 from slackbot import Slack
 from core import create_response
-from web.dashboard import get_dash_app
+from web.dash_app import get_dash_app
 
 
 from config import Config
