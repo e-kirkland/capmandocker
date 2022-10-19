@@ -79,42 +79,12 @@ def get_player_data():
     return player_dict, player_df, dt_col_param
 
 
-def get_layout():
-
-    layout_list = []
-
-    layout_div = html.Div([])
-    layout_list.append(dcc.Store(id="diff-store"))
-    layout_list.append(html.P("Changes to DataTable"))
-    layout_list.append(html.Div(id="data-diff"))
-    layout_list.append(html.Button("Save Changes", id="button"))
-    layout_list.append(dcc.Interval(id="interval_component", interval=2000))
-
-    # Full data table
-    player_dict, player_df, dt_col_param = get_player_data()
-    print("PLAYER DATA RETRIEVED: ", player_df.head(), flush=True)
-    data_table = dash_table.DataTable(
-        id="table-data-diff",
-        # columns=dt_col_param,
-        # data=player_df.to_dict("records"),
-        columns=[],
-        data=[],
-        editable=True,
-        filter_action="native",
-        sort_action="native",
-        sort_mode="multi",
-    )
-    layout_list.append(data_table)
-
-    return html.Div(layout_list)
-
-
 def get_dash_app(app, pathname="/web/"):
 
     load_dotenv()
 
     # Bootstrap theme
-    external_stylesheets = [dbc.themes.COSMO]
+    external_stylesheets = [dbc.themes.DARKLY]
 
     dash_app = Dash(
         __name__,
@@ -140,25 +110,22 @@ def get_dash_app(app, pathname="/web/"):
     navbar = dbc.Navbar(
         dbc.Container(
             [
-                # html.A(
-                #     # Use row and col to control vertical alignment of logo / brand
-                #     dbc.Row(
-                #         [
-                #             # dbc.Col(
-                #             #     html.Img(
-                #             #         src="/app/project/static/logo.jpeg", height="30px"
-                #             #     )
-                #             # ),
-                #             dbc.Col(
-                #                 dbc.NavbarBrand(
-                #                     "CAPMAN - ATL Dynasty League", className="ml-2"
-                #                 )
-                #             ),
-                #         ],
-                #         align="left",
-                #     ),
-                #     href="/home",
-                # ),
+                html.A(
+                    # Use row and col to control vertical alignment of logo / brand
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                html.Img(
+                                    src=dash_app.get_asset_url("logo.png"),
+                                    height="40px",
+                                )
+                            ),
+                        ],
+                        align="left",
+                    ),
+                    href="/dashboard",
+                    style={"marginRight": "20px"},
+                ),
                 dbc.NavbarBrand("CAPMAN - ATL Dynasty League", className="ml-2"),
                 dbc.NavbarToggler(id="navbar-toggler2"),
                 dbc.Collapse(
@@ -209,7 +176,12 @@ def get_dash_app(app, pathname="/web/"):
 
         dt_col_param = []
         for col in player_df.columns:
-            dt_col_param.append({"name": str(col).upper(), "id": str(col)})
+            dt_col_param.append(
+                {
+                    "name": str(col).upper().replace("INJURED_RESERVE", "IR"),
+                    "id": str(col),
+                }
+            )
         player_dict = player_df.to_dict(orient="records")
 
         return player_dict, dt_col_param
@@ -337,6 +309,12 @@ def get_dash_app(app, pathname="/web/"):
             title="Roster Size (Not Including Injured Reserve)",
         )
 
+        fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="white"),
+        )
+
         return fig
 
     @dash_app.callback(Output("bar-salary", "figure"), [Input("url", "pathname")])
@@ -360,6 +338,12 @@ def get_dash_app(app, pathname="/web/"):
             y="salary",
             labels={"salary": "Total Cap Spend", "display_name": "Team"},
             title="Salary Cap Spend",
+        )
+
+        fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="white"),
         )
 
         return fig
@@ -408,12 +392,18 @@ def get_dash_app(app, pathname="/web/"):
             margin=dict(l=20, r=20, t=0, b=0),
             height=150,
             width=700,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="white"),
         )
 
         return fig
 
     @dash_app.callback(
-        Output("roster-dynamic-dropdown", "options"),
+        [
+            Output("roster-dynamic-dropdown", "options"),
+            Output("roster-dynamic-dropdown", "value"),
+        ],
         Input("roster-dynamic-dropdown", "search_value"),
     )
     def update_options(search_value):
@@ -426,36 +416,45 @@ def get_dash_app(app, pathname="/web/"):
                 {"label": row["display_name"], "value": row["roster_id"]}
             )
 
-        return roster_options
+        return roster_options, roster_options[0]["value"]
 
     @dash_app.callback(
         [Output("single-roster-data", "data"), Output("single-roster-data", "columns")],
         [Input("roster-dynamic-dropdown", "value")],
     )
     def get_single_roster_data_callback(value):
-        print("TRIGGERED: ", value, flush=True)
-        player_df = Players.get_all_players_df()
-        player_df = player_df[player_df["roster_id"] == int(value)]
-        player_df = player_df.sort_values(
-            by=["roster_id", "position", "war"], ascending=[True, True, False]
-        )
-        keepcols = [
-            "player",
-            "position",
-            "team",
-            "salary",
-            "war",
-            "value",
-            "injured_reserve",
-        ]
-        player_df = player_df[keepcols]
+        if value:
+            print("TRIGGERED: ", value, flush=True)
+            player_df = Players.get_all_players_df()
+            player_df = player_df[player_df["roster_id"] == int(value)]
+            player_df = player_df.sort_values(
+                by=["roster_id", "position", "war"], ascending=[True, True, False]
+            )
+            keepcols = [
+                "player",
+                "position",
+                "team",
+                "salary",
+                "war",
+                "value",
+                "injured_reserve",
+            ]
+            player_df = player_df[keepcols]
 
-        dt_col_param = []
-        for col in player_df.columns:
-            dt_col_param.append({"name": str(col).upper(), "id": str(col)})
-        player_dict = player_df.to_dict(orient="records")
+            dt_col_param = []
+            for col in player_df.columns:
+                dt_col_param.append(
+                    {
+                        "name": str(col).upper().replace("INJURED_RESERVE", "IR"),
+                        "id": str(col),
+                    }
+                )
+            player_dict = player_df.to_dict(orient="records")
 
-        return player_dict, dt_col_param
+            return player_dict, dt_col_param
+
+        else:
+            return None, None
 
     @dash_app.callback(
         Output("indicator-rosters", "figure"),
@@ -497,6 +496,9 @@ def get_dash_app(app, pathname="/web/"):
             margin=dict(l=20, r=20, t=0, b=0),
             height=150,
             width=700,
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="white"),
         )
 
         return fig
@@ -541,7 +543,12 @@ def get_dash_app(app, pathname="/web/"):
 
         dt_col_param = []
         for col in player_df.columns:
-            dt_col_param.append({"name": str(col).upper(), "id": str(col)})
+            dt_col_param.append(
+                {
+                    "name": str(col).upper().replace("INJURED_RESERVE", "IR"),
+                    "id": str(col),
+                }
+            )
         player_dict = player_df.to_dict(orient="records")
 
         return player_dict, dt_col_param
@@ -586,7 +593,12 @@ def get_dash_app(app, pathname="/web/"):
 
         dt_col_param = []
         for col in player_df.columns:
-            dt_col_param.append({"name": str(col).upper(), "id": str(col)})
+            dt_col_param.append(
+                {
+                    "name": str(col).upper().replace("INJURED_RESERVE", "IR"),
+                    "id": str(col),
+                }
+            )
         player_dict = player_df.to_dict(orient="records")
 
         return player_dict, dt_col_param

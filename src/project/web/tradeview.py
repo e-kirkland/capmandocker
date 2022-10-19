@@ -32,6 +32,7 @@ layout = html.Div(
                                 dcc.Dropdown(
                                     id="left-dynamic-dropdown",
                                     placeholder="Select a team",
+                                    className="DropdownSelector",
                                 ),
                                 dash_table.DataTable(
                                     id="left-roster-data",
@@ -40,6 +41,14 @@ layout = html.Div(
                                     editable=False,
                                     sort_action="native",
                                     sort_mode="multi",
+                                    style_header={
+                                        'backgroundColor': 'rgb(30, 30, 30)',
+                                        'color': 'white'
+                                    },
+                                    style_data={
+                                        'backgroundColor': 'rgb(50, 50, 50)',
+                                        'color': 'white'
+                                    },
                                 ),
                             ],
                             style={"marginLeft": "20px"},
@@ -49,6 +58,7 @@ layout = html.Div(
                                 dcc.Dropdown(
                                     id="right-dynamic-dropdown",
                                     placeholder="Select a team",
+                                    className="DropdownSelector",
                                 ),
                                 dash_table.DataTable(
                                     id="right-roster-data",
@@ -57,6 +67,14 @@ layout = html.Div(
                                     editable=False,
                                     sort_action="native",
                                     sort_mode="multi",
+                                    style_header={
+                                        'backgroundColor': 'rgb(30, 30, 30)',
+                                        'color': 'white'
+                                    },
+                                    style_data={
+                                        'backgroundColor': 'rgb(50, 50, 50)',
+                                        'color': 'white'
+                                    },
                                 ),
                             ],
                             style={"marginRight": "20px"},

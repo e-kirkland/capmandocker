@@ -30,7 +30,9 @@ layout = html.Div(
                 dbc.Col(
                     [
                         dcc.Dropdown(
-                            id="roster-dynamic-dropdown", placeholder="Select a team"
+                            id="roster-dynamic-dropdown",
+                            placeholder="Select a team",
+                            className="DropdownSelector",
                         ),
                         dash_table.DataTable(
                             id="single-roster-data",
@@ -39,6 +41,14 @@ layout = html.Div(
                             editable=False,
                             sort_action="native",
                             sort_mode="multi",
+                            style_header={
+                                'backgroundColor': 'rgb(30, 30, 30)',
+                                'color': 'white'
+                            },
+                            style_data={
+                                'backgroundColor': 'rgb(50, 50, 50)',
+                                'color': 'white'
+                            },
                         ),
                     ],
                     style={"marginLeft": "20px", "marginRight": "20px"},

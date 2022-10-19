@@ -1,0 +1,39 @@
+.DropdownSelector {
+    font-weight: 200;
+    font-size: 14px;
+    line-height: 12px;
+    color: rgba(0, 0, 0, 0);
+    margin: 0;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0);
+    background-color: transparent;
+    position: relative;
+    display: inline-block;
+    width: 500px;
+    vertical-align: middle;
+}
+
+.Select-control {
+    background-color: rgb(50, 50, 50) !important;
+}
+
+.Select-value-label {
+    font-size: 18px !important;
+    color: white !important;
+}
+
+.VirtualizedSelectOption {
+    background-color: LightGray;
+    color: black;
+}
+
+.VirtualizedSelectFocusedOption {
+    background-color: DarkGray;
+    font-size: 18px;
+    color: white;
+}
+
+.DataTableOverride {
+    background-color: rgb(50, 50, 50);
+    color: white;
+}
