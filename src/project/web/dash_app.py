@@ -93,6 +93,8 @@ def get_dash_app(app, pathname="/web/"):
         url_base_pathname=pathname,
     )
 
+    dash_app.title = "CapMan"
+
     # building the navigation bar
     # https://github.com/facultyai/dash-bootstrap-components/blob/master/examples/advanced-component-usage/Navbars.py
     dropdown = dbc.DropdownMenu(
@@ -289,11 +291,18 @@ def get_dash_app(app, pathname="/web/"):
     def roster_bar_chart(n):
         player_dict, player_df, dt_col_param = get_player_data()
         claimed_players = player_df[player_df["roster_id"] != 999]
-        active_players = claimed_players[claimed_players["injured_reserve"] != True]
-        print("ACTIVE PLAYERS: ", active_players.head(), flush=True)
+        active_players = claimed_players[
+            claimed_players["injured_reserve"] == bool(False)
+        ]
         roster_count_df = active_players.groupby("roster_id")["player"].count()
         roster_count_df = roster_count_df.reset_index()
         roster_count_df["roster_id"] = roster_count_df["roster_id"].astype(str)
+
+        # Get roster min/max
+        league_id = app.config["ROSTER_DATA"]["league_id"]
+        _settings = Settings.get_by_league_id(league_id)
+        roster_min = _settings.roster_min
+        roster_max = _settings.roster_max
 
         # Get display name
         roster_df = Rosters.get_all_rosters_df()
@@ -309,6 +318,10 @@ def get_dash_app(app, pathname="/web/"):
             title="Roster Size (Not Including Injured Reserve)",
         )
 
+        fig.add_hrect(
+            y0=roster_min, y1=roster_max, line_width=0, fillcolor="teal", opacity=0.4
+        )
+
         fig.update_layout(
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
@@ -320,11 +333,17 @@ def get_dash_app(app, pathname="/web/"):
     @dash_app.callback(Output("bar-salary", "figure"), [Input("url", "pathname")])
     def salary_bar_chart(n):
         player_dict, player_df, dt_col_param = get_player_data()
-        active_players = player_df[player_df["roster_id"] != 999]
+        claimed_players = player_df[player_df["roster_id"] != 999]
+        active_players = claimed_players[claimed_players["injured_reserve"] != True]
         active_players["salary"] = active_players["salary"].astype(int)
         roster_count_df = active_players.groupby("roster_id")["salary"].sum()
         roster_count_df = roster_count_df.reset_index()
         roster_count_df["roster_id"] = roster_count_df["roster_id"].astype(str)
+
+        # Get salary cap
+        league_id = app.config["ROSTER_DATA"]["league_id"]
+        _settings = Settings.get_by_league_id(league_id)
+        salary_cap = _settings.salary_cap
 
         # Get display name
         roster_df = Rosters.get_all_rosters_df()
@@ -339,6 +358,7 @@ def get_dash_app(app, pathname="/web/"):
             labels={"salary": "Total Cap Spend", "display_name": "Team"},
             title="Salary Cap Spend",
         )
+        fig.add_hline(y=salary_cap, line_color="red", line_width=3)
 
         fig.update_layout(
             paper_bgcolor="rgba(0,0,0,0)",
