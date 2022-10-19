@@ -17,7 +17,7 @@ from models.base import db
 from models.Settings import Settings
 from models.Players import Players
 from models.Rosters import Rosters
-from views.api import api, check_compliance
+from views.api import api, check_compliance, get_war
 from views.players import players
 from views.rosters import rosters
 from views.settings import settings
@@ -58,7 +58,7 @@ with app.app_context():
 # Instantiating scheduler
 sched = BackgroundScheduler(daemon=True)
 sched.add_job(check_compliance, "interval", minutes=30)
-# sched.add_job(get_war, "interval", hours=24)
+sched.add_job(get_war, "interval", hours=24)
 sched.start()
 
 
