@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 import pandas as pd
 
 
-
 class Slack:
     def __init__(self, app):
         load_dotenv()
@@ -17,10 +16,6 @@ class Slack:
         self.user_token = f"{os.getenv('SLACK_USER_TOKEN')}"
         self.secret = f"{os.getenv('SLACK_SECRET')}"
         self.alert_channel = f"{os.getenv('ALERT_CHANNEL')}"
-        print("TOKENS: ", self.bot_token)
-        print("USER TOKEN: ", self.user_token)
-        print("SECRET: ", self.secret)
-        print("ALERT_CHANNEL: ", self.alert_channel)
 
         # Instantiate slack client
         # self.slack_event_adapter = SlackEventAdapter(self.secret, "/slack/events", app)
@@ -33,7 +28,6 @@ class Slack:
         ROSTER_FILE = f"{os.getenv('ROSTER_FILE')}"
         MEDIA_FOLDER = f"{os.getenv('APP_FOLDER')}/project/media"
         ROSTER_FILEPATH = MEDIA_FOLDER + "/" + ROSTER_FILE
-        print("ROSTER FULL FILEPATH: ", ROSTER_FILEPATH, flush=True)
         try:
             with open(ROSTER_FILEPATH) as f:
                 ROSTER_DATA = json.load(f)

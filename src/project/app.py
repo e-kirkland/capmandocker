@@ -6,17 +6,11 @@ print("APPENDING PATH: ", append_path)
 sys.path.append(append_path)
 
 from werkzeug.utils import secure_filename
-from flask import Flask, jsonify, send_from_directory, request, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, jsonify, send_from_directory, request
 from slackeventsapi import SlackEventAdapter
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.interval import IntervalTrigger
-from dash import Dash, dash_table, dcc, html
 
 from models.base import db
-from models.Settings import Settings
-from models.Players import Players
-from models.Rosters import Rosters
 from views.api import api, check_compliance, get_war
 from views.players import players
 from views.rosters import rosters
@@ -25,8 +19,6 @@ from views.slack import slack, file_upload, slack_message
 from slackbot import Slack
 from core import create_response
 from web.dash_app import get_dash_app
-
-
 from config import Config
 
 app = Flask(__name__)
@@ -43,10 +35,7 @@ with app.app_context():
     app.config.from_object(config)
 
     # Initialize database
-    print("DB_URI: ", app.config["SQLALCHEMY_DATABASE_URI"])
     db.init_app(app)
-
-    print("ROSTER DATA: ", app.config["ROSTER_DATA"])
 
     # Instantiating slackbot
     slackbot = Slack(app)
@@ -54,12 +43,12 @@ with app.app_context():
 
     dash_app = get_dash_app(app, pathname="/web/")
 
-
-# Instantiating scheduler
-sched = BackgroundScheduler(daemon=True)
-sched.add_job(check_compliance, "interval", minutes=30)
-sched.add_job(get_war, "interval", hours=24)
-sched.start()
+    # Instantiating scheduler
+    sched = BackgroundScheduler(daemon=True)
+    sched.add_job(check_compliance, "interval", minutes=30)
+    sched.add_job(get_war, "interval", hours=24)
+    sched.start()
+    print("SCHEDULER STARTED", flush=True)
 
 
 @app.route("/")

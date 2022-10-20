@@ -29,7 +29,6 @@ class Config(object):
     # Load json file
     ROSTER_FILE = f"{os.getenv('ROSTER_FILE')}"
     ROSTER_FILEPATH = MEDIA_FOLDER + "/" + ROSTER_FILE
-    print("ROSTER FULL FILEPATH: ", ROSTER_FILEPATH, flush=True)
     try:
         with open(ROSTER_FILEPATH) as f:
             ROSTER_DATA = json.load(f)
