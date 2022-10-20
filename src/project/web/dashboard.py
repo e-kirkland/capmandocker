@@ -21,12 +21,13 @@ layout = html.Div(
                 dbc.Col(
                     [dcc.Graph(id="indicator-settings")],
                     align="start",
-                )
+                ),
             ],
             align="start",
             style={"height": "20vh"},
         ),
         dcc.Graph(id="bar-roster"),
         dcc.Graph(id="bar-salary"),
+        dcc.Graph(id="bar-starter-war"),
     ]
 )

@@ -14,6 +14,7 @@ from models.Rosters import Rosters
 from models.Settings import Settings
 from models.Rosters import Rosters
 from views.players import upsert_player
+from scripts import war
 from web import all_players, dashboard, rosters, tradeview
 from dotenv import load_dotenv
 
@@ -333,8 +334,8 @@ def get_dash_app(app, pathname="/web/"):
     @dash_app.callback(Output("bar-salary", "figure"), [Input("url", "pathname")])
     def salary_bar_chart(n):
         player_dict, player_df, dt_col_param = get_player_data()
-        claimed_players = player_df[player_df["roster_id"] != 999]
-        active_players = claimed_players[claimed_players["injured_reserve"] != True]
+        active_players = player_df[player_df["roster_id"] != 999]
+        # active_players = claimed_players[claimed_players["injured_reserve"] != True]
         active_players["salary"] = active_players["salary"].astype(int)
         roster_count_df = active_players.groupby("roster_id")["salary"].sum()
         roster_count_df = roster_count_df.reset_index()
@@ -359,6 +360,41 @@ def get_dash_app(app, pathname="/web/"):
             title="Salary Cap Spend",
         )
         fig.add_hline(y=salary_cap, line_color="red", line_width=3)
+
+        fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="white"),
+        )
+
+        return fig
+
+    @dash_app.callback(Output("bar-starter-war", "figure"), [Input("url", "pathname")])
+    def starter_war_bar_chart(n):
+        player_dict, player_df, dt_col_param = get_player_data()
+        active_players = player_df[player_df["roster_id"] != 999]
+
+        starter_war_df = war.calculate_league_starter_war(active_players)
+        starter_war_df["roster_id"] = starter_war_df["roster_id"].astype(str)
+
+        # Get display name
+        roster_df = Rosters.get_all_rosters_df()
+        roster_df["roster_id"] = roster_df["roster_id"].astype(str)
+        merged = starter_war_df.merge(
+            roster_df, left_on="roster_id", right_on="roster_id"
+        )
+
+        # Get mean war
+        mean_starter_war = merged["starter_war"].mean()
+
+        fig = px.bar(
+            merged,
+            x="display_name",
+            y="starter_war",
+            labels={"starter_war": "Starters WAR", "display_name": "Team"},
+            title="Starters WAR (1 QB, 1 TE, 4 RB, 4 WR)",
+        )
+        fig.add_hline(y=mean_starter_war, line_color="green", line_width=3)
 
         fig.update_layout(
             paper_bgcolor="rgba(0,0,0,0)",
@@ -489,6 +525,9 @@ def get_dash_app(app, pathname="/web/"):
         active_df = player_df[player_df["injured_reserve"] != True]
         active_roster = len(active_df)
 
+        # Get total WAR for top 10 players
+        team_top_war = war.calculate_starter_war(player_df)
+
         fig = go.Figure()
 
         fig.add_trace(
@@ -511,8 +550,18 @@ def get_dash_app(app, pathname="/web/"):
             )
         )
 
+        fig.add_trace(
+            go.Indicator(
+                mode="number",
+                value=team_top_war,
+                # number={"prefix": "$"},
+                title={"text": "Top 10 WAR"},
+                domain={"row": 0, "column": 2},
+            )
+        )
+
         fig.update_layout(
-            grid={"rows": 1, "columns": 2, "pattern": "independent"},
+            grid={"rows": 1, "columns": 3, "pattern": "independent"},
             margin=dict(l=20, r=20, t=0, b=0),
             height=150,
             width=700,

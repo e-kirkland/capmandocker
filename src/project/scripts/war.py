@@ -2,6 +2,7 @@
 import random as random
 from os.path import join, dirname
 import datetime
+from re import I
 import traceback
 
 # Third-party imports
@@ -344,9 +345,26 @@ def get_year_dates(num_years=3):
     return all_years
 
 
+def determine_years_to_pull():
+
+    cur_year = int(datetime.datetime.now().strftime("%Y"))
+    df = nfl.import_weekly_data(years=[cur_year], columns=["season", "week"])
+    unique_weeks = [x for x in df["week"].unique()]
+
+    # If we are past week 4, return 1 to pull from current season
+    if len(unique_weeks) >= 4:
+        return 1
+
+    # Otherwise, pull form previous season as well
+    else:
+        return 2
+
+
 def update_league_war():
 
-    years = get_year_dates(num_years=1)
+    num_years = determine_years_to_pull()
+
+    years = get_year_dates(num_years=num_years)
     print("YEARS TO ANALYZE: ", years)
 
     player_df = calculate_league_war(years)
@@ -408,6 +426,57 @@ def update_league_war():
             pass
 
     return "SUCCESS"
+
+
+def calculate_starter_war(players_df):
+
+    total_war = 0
+
+    # Get top qb war
+    qb_df = players_df[players_df["position"] == "QB"]
+    qb_war = qb_df["war"].max()
+    total_war += qb_war
+
+    # Get top TE war
+    te_df = players_df[players_df["position"] == "TE"]
+    te_war = te_df["war"].max()
+    total_war += te_war
+
+    # Get top 4 RB war
+    rb_df = players_df[players_df["position"] == "RB"]
+    rb_df = rb_df.sort_values(by="war", ascending=False)
+    rb_df = rb_df.head(4)
+    rb_war = rb_df["war"].sum()
+    total_war += rb_war
+
+    # Get top 4 WR war
+    wr_df = players_df[players_df["position"] == "WR"]
+    wr_df = wr_df.sort_values(by="war", ascending=False)
+    wr_df = wr_df.head(4)
+    wr_war = wr_df["war"].sum()
+    total_war += wr_war
+
+    return total_war
+
+
+def calculate_league_starter_war(active_players):
+
+    roster_ids = active_players["roster_id"].unique()
+
+    return_dicts = []
+    for id in roster_ids:
+        id_dict = {}
+        id_dict["roster_id"] = id
+
+        id_df = active_players[active_players["roster_id"] == id]
+        id_war = calculate_starter_war(id_df)
+        id_dict["starter_war"] = id_war
+
+        return_dicts.append(id_dict)
+
+    return_df = pd.DataFrame(return_dicts)
+
+    return return_df
 
 
 if __name__ == "__main__":
