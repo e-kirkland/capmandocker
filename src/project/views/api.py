@@ -108,6 +108,14 @@ def check_compliance():
         return create_response(status=200, message="ALL TEAMS IN COMPLIANCE")
 
 
+def sched_check_compliance(app):
+
+    with app.app_context():
+        return_val = check_compliance()
+
+    return return_val
+
+
 @api.route("/getWAR", methods=["GET"])
 def get_war():
 
@@ -122,3 +130,11 @@ def get_war():
         msg = traceback.print_exc()
 
         return create_response(status=500, message=msg)
+
+
+def sched_get_war(app):
+
+    with app.app_context():
+        return_val = get_war()
+
+    return return_val

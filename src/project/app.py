@@ -11,7 +11,7 @@ from slackeventsapi import SlackEventAdapter
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from models.base import db
-from views.api import api, check_compliance, get_war
+from views.api import api, sched_check_compliance, sched_get_war
 from views.players import players
 from views.rosters import rosters
 from views.settings import settings
@@ -45,8 +45,8 @@ with app.app_context():
 
     # Instantiating scheduler
     sched = BackgroundScheduler(daemon=True)
-    sched.add_job(check_compliance, "interval", minutes=30)
-    sched.add_job(get_war, "interval", hours=24)
+    sched.add_job(sched_check_compliance, args=[app], trigger="interval", minutes=30)
+    sched.add_job(sched_get_war, args=[app], trigger="interval", hours=24)
     sched.start()
     print("SCHEDULER STARTED", flush=True)
 

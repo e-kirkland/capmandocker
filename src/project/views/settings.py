@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 
 from models.Settings import Settings
-from core import create_response, serialize_list
+from core import create_response
 
 settings = Blueprint("settings", __name__, url_prefix="/settings")
 
