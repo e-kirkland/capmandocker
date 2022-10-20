@@ -9,6 +9,7 @@ from scripts.sleeper import check_transaction
 from scripts.war import update_league_war
 from core import create_response
 from views.slack import get_league_id, slackbot
+from views.settings import return_settings_by_league_id
 from scripts.utils import check_league_compliance
 from scripts.war import update_league_war
 
@@ -81,7 +82,7 @@ def check_compliance():
         return create_response(
             status=500, message="Could not parse league_id from league_users.json file"
         )
-    _settings = Settings.get_by_league_id(league_id)
+    _settings = return_settings_by_league_id(league_id)
     cap = _settings.salary_cap
     rosterMin = _settings.roster_min
     rosterMax = _settings.roster_max

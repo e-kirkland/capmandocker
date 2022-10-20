@@ -34,6 +34,12 @@ def get_settings_by_league_id(league_id):
     return create_response(data={"settings": settings.to_dict()})
 
 
+def return_settings_by_league_id(league_id):
+    settings = Settings.get_by_league_id(league_id)
+
+    return settings
+
+
 @settings.route("/<league_id>", methods=["PUT"])
 def update_settings_by_league_id(league_id):
     # Get requested data
