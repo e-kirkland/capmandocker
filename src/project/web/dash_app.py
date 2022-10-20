@@ -593,34 +593,38 @@ def get_dash_app(app, pathname="/web/"):
         [Input("left-dynamic-dropdown", "value")],
     )
     def get_left_roster_data_callback(value):
-        print("TRIGGERED: ", value, flush=True)
-        player_df = Players.get_all_players_df()
-        player_df = player_df[player_df["roster_id"] == int(value)]
-        player_df = player_df.sort_values(
-            by=["roster_id", "position", "war"], ascending=[True, True, False]
-        )
-        keepcols = [
-            "player",
-            "position",
-            "team",
-            "salary",
-            "war",
-            "value",
-            "injured_reserve",
-        ]
-        player_df = player_df[keepcols]
-
-        dt_col_param = []
-        for col in player_df.columns:
-            dt_col_param.append(
-                {
-                    "name": str(col).upper().replace("INJURED_RESERVE", "IR"),
-                    "id": str(col),
-                }
+        if value:
+            print("TRIGGERED: ", value, flush=True)
+            player_df = Players.get_all_players_df()
+            player_df = player_df[player_df["roster_id"] == int(value)]
+            player_df = player_df.sort_values(
+                by=["roster_id", "position", "war"], ascending=[True, True, False]
             )
-        player_dict = player_df.to_dict(orient="records")
+            keepcols = [
+                "player",
+                "position",
+                "team",
+                "salary",
+                "war",
+                "value",
+                "injured_reserve",
+            ]
+            player_df = player_df[keepcols]
 
-        return player_dict, dt_col_param
+            dt_col_param = []
+            for col in player_df.columns:
+                dt_col_param.append(
+                    {
+                        "name": str(col).upper().replace("INJURED_RESERVE", "IR"),
+                        "id": str(col),
+                    }
+                )
+            player_dict = player_df.to_dict(orient="records")
+
+            return player_dict, dt_col_param
+
+        else:
+            return None, None
 
     @dash_app.callback(
         Output("right-dynamic-dropdown", "options"),
@@ -643,33 +647,37 @@ def get_dash_app(app, pathname="/web/"):
         [Input("right-dynamic-dropdown", "value")],
     )
     def get_right_roster_data_callback(value):
-        print("TRIGGERED: ", value, flush=True)
-        player_df = Players.get_all_players_df()
-        player_df = player_df[player_df["roster_id"] == int(value)]
-        player_df = player_df.sort_values(
-            by=["roster_id", "position", "war"], ascending=[True, True, False]
-        )
-        keepcols = [
-            "player",
-            "position",
-            "team",
-            "salary",
-            "war",
-            "value",
-            "injured_reserve",
-        ]
-        player_df = player_df[keepcols]
-
-        dt_col_param = []
-        for col in player_df.columns:
-            dt_col_param.append(
-                {
-                    "name": str(col).upper().replace("INJURED_RESERVE", "IR"),
-                    "id": str(col),
-                }
+        if value:
+            print("TRIGGERED: ", value, flush=True)
+            player_df = Players.get_all_players_df()
+            player_df = player_df[player_df["roster_id"] == int(value)]
+            player_df = player_df.sort_values(
+                by=["roster_id", "position", "war"], ascending=[True, True, False]
             )
-        player_dict = player_df.to_dict(orient="records")
+            keepcols = [
+                "player",
+                "position",
+                "team",
+                "salary",
+                "war",
+                "value",
+                "injured_reserve",
+            ]
+            player_df = player_df[keepcols]
 
-        return player_dict, dt_col_param
+            dt_col_param = []
+            for col in player_df.columns:
+                dt_col_param.append(
+                    {
+                        "name": str(col).upper().replace("INJURED_RESERVE", "IR"),
+                        "id": str(col),
+                    }
+                )
+            player_dict = player_df.to_dict(orient="records")
+
+            return player_dict, dt_col_param
+
+        else:
+            return None, None
 
     return dash_app
