@@ -118,9 +118,14 @@ def get_dash_app(app, pathname="/web/"):
                     dbc.Row(
                         [
                             dbc.Col(
-                                html.Img(
-                                    src=dash_app.get_asset_url("logo.png"),
-                                    height="40px",
+                                html.A(
+                                    href="https://capman.fly.dev/",
+                                    children=[
+                                        html.Img(
+                                            src=dash_app.get_asset_url("logo.png"),
+                                            height="40px",
+                                        )
+                                    ],
                                 )
                             ),
                         ],
@@ -253,7 +258,13 @@ def get_dash_app(app, pathname="/web/"):
                     data[str(update_col)] = float(update_value)
 
                 elif str(update_col) in ["injured_reserve"]:
-                    data[str(update_col)] = bool(update_value)
+
+                    if "t" in update_value.lower():
+                        update_value = bool(True)
+                    else:
+                        update_value = bool(False)
+
+                    data[str(update_col)] = update_value
 
                 else:
                     data[str(update_col)] = str(update_value)
@@ -261,8 +272,6 @@ def get_dash_app(app, pathname="/web/"):
                 print(f"UPDATING PLAYER {player_id}: ", data, flush=True)
 
                 _player = upsert_player(player_id, data)
-
-                print("UPDATED PLAYER: ", _player)
 
             return [dcc.Markdown(change) for change in dt_changes]
 

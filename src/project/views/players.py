@@ -47,26 +47,27 @@ def upsert_player(player_id, data):
 
     # Pull player and check if existing
     _players = Players.get_by_player_id(str(player_id))
+    print("CURRENT PLAYER INFO: ", _players.to_dict(), flush=True)
     if not _players:
         return create_response(status=400, message="player_id not found")
 
     # Store new values
     if data.get("player"):
-        _players.player = data["player"]
+        _players.player = str(data["player"])
     if data.get("position"):
-        _players.position = data["position"]
+        _players.position = str(data["position"])
     if data.get("team"):
-        _players.team = data["team"]
+        _players.team = str(data["team"])
     if data.get("salary"):
-        _players.salary = data["salary"]
+        _players.salary = str(data["salary"])
     if data.get("roster_id"):
-        _players.roster_id = data["roster_id"]
-    if data.get("injured_reserve"):
-        _players.injured_reserve = data["injured_reserve"]
+        _players.roster_id = int(data["roster_id"])
+    if data.get("injured_reserve") is not None:
+        _players.injured_reserve = bool(data["injured_reserve"])
     if data.get("war"):
-        _players.war = data["war"]
+        _players.war = float(data["war"])
     if data.get("value"):
-        _players.value = data["value"]
+        _players.value = float(data["value"])
 
     # Upsert player
     Players.upsert_player(_players)
@@ -125,11 +126,7 @@ def update_player_by_player_id(player_id):
 def drop_player(player_id):
 
     # Build drop dictionary for player
-    data = {
-        "roster_id": '999',
-        "salary": 0,
-        "injured_reserve": False
-    }
+    data = {"roster_id": "999", "salary": 0, "injured_reserve": False}
 
     # Upsert player
     _player = upsert_player(player_id, data)
@@ -141,9 +138,7 @@ def add_player(player_id, roster_id, salary=None):
 
     # Build add dictionary for player
 
-    data = {
-        "roster_id": str(roster_id)
-    }
+    data = {"roster_id": str(roster_id)}
 
     if salary:
         data["salary"] = int(salary)
@@ -157,9 +152,7 @@ def add_player(player_id, roster_id, salary=None):
 def trade_player(player_id, roster_id):
 
     # Build trade dictionary for player
-    data = {
-        "roster_id": str(roster_id)
-    }
+    data = {"roster_id": str(roster_id)}
 
     # Upsert player
     _player = upsert_player(player_id, data)

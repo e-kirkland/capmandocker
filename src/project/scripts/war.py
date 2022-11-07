@@ -216,8 +216,8 @@ def calculate_average_team(merged, years=[2021, 2020, 2019]):
         axis=1,
     )
 
-    # Remove 0s to correct for missed games
-    merged["total_points"] = merged["total_points"].astype(float).replace(0.0, np.NaN)
+    # Format columns correctly
+    merged["total_points"] = merged["total_points"].astype(float)
 
     merged = merged.reset_index()
 
