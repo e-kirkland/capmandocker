@@ -47,7 +47,6 @@ def upsert_player(player_id, data):
 
     # Pull player and check if existing
     _players = Players.get_by_player_id(str(player_id))
-    print("CURRENT PLAYER INFO: ", _players.to_dict(), flush=True)
     if not _players:
         return create_response(status=400, message="player_id not found")
 

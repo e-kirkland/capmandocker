@@ -154,7 +154,7 @@ def create_merged_player_df(years=[2021, 2020, 2019]):
     rosters = nfl.import_rosters(years)
 
     player_merge_table = pd.DataFrame(
-        rosters.groupby(["player_name", "position", "player_id", "sleeper_id"])
+        rosters.groupby(["player_id", "sleeper_id", "player_name"])
         .size()
         .reset_index(name="Freq")
     )
@@ -166,27 +166,43 @@ def create_merged_player_df(years=[2021, 2020, 2019]):
     yearly = yearly.merge(
         player_merge_table, how="left", left_on="player_id", right_on="player_id"
     )
-    yearly = yearly.drop(columns=["Freq", "position"])
+    yearly = yearly.drop(columns=["Freq", "player_name"])
+    yearly = yearly.rename(
+        columns={"player_display_name": "player_name", "position_group": "position"}
+    )
 
     fantasy_players = Players.get_all_players_df()
 
-    # Merge data from sleeper league
     fantasy_players = fantasy_players.rename(
-        columns={"player_id": "sleeper_id", "player": "sleeper_player_name"}
+        columns={
+            "position": "pg_position",
+            "player": "pg_player_name",
+            "player_id": "pg_player_id",
+        }
     )
-
-    print("FANTASY_PLAYERS COLUMNS: ", fantasy_players.columns)
-    print("YEARLY COLUMNS: ", yearly.columns)
 
     merged = yearly.merge(
-        fantasy_players, how="left", left_on="sleeper_id", right_on="sleeper_id"
+        fantasy_players,
+        how="left",
+        left_on=["player_name", "position"],
+        right_on=["pg_player_name", "pg_position"],
     )
+
+    # Consolidate sleeper ids
+    merged["sleeper_id"] = merged["sleeper_id"].combine_first(merged["pg_player_id"])
 
     # Getting single record for each sleeper_id and position
     player_single_record = pd.DataFrame(
-        rosters.groupby(["sleeper_id", "position"]).size().reset_index(name="Freq")
+        fantasy_players.groupby(["pg_player_id", "pg_position", "pg_player_name"])
+        .size()
+        .reset_index(name="Freq")
+    ).rename(
+        columns={
+            "pg_player_id": "sleeper_id",
+            "pg_player_name": "player_name",
+            "pg_position": "position",
+        }
     )
-    print("PLAYER SINGLE RECORD INFO: ", player_single_record.info())
 
     return merged, player_single_record
 
@@ -259,17 +275,11 @@ def simulate_avg_points(avg_df, n_iter=10000):
 
 def calculate_all_players_war(merged, player_df, avg_df, avg_team_mean, avg_team_std):
 
-    # Dropping existing war and value
-    print("MERGED PRE WAR: ", merged.info())
-
     # Get dataframe to calculate war
-    keepcols = ["sleeper_id", "position"]
+    keepcols = ["sleeper_id", "position", "player_name"]
     player_df = player_df[keepcols]
     positions_keep = ["QB", "RB", "WR", "TE"]
     player_df = player_df[player_df["position"].isin(positions_keep)]
-
-    ###
-    print("PLAYER DF INFO: ", player_df.info())
 
     # Calculate WAR for all players
     player_df["war"] = player_df.apply(
@@ -284,8 +294,6 @@ def calculate_all_players_war(merged, player_df, avg_df, avg_team_mean, avg_team
         ),
         axis=1,
     )
-
-    print("PLAYER DF INFO POST WAR: ", player_df.info())
 
     player_df = player_df.dropna(subset=["war", "sleeper_id"])
     player_df = player_df.sort_values(by=["war"], ascending=False)
@@ -303,9 +311,9 @@ def calculate_league_war(years=[2021, 2020, 2019]):
 
     # Reducing player point calculations to previous 20 games
     merged = merged.sort_values(by=["season", "week"], ascending=False)
-    merged["player_count"] = merged.groupby("sleeper_id")["sleeper_id"].transform(
-        "count"
-    )
+    merged["player_count"] = merged.groupby(["sleeper_id", "player_name", "position"])[
+        "sleeper_id"
+    ].transform("count")
 
     # Reducing to players with more than 3 games to consider
     merged = merged[merged["player_count"] >= 3]
@@ -361,6 +369,7 @@ def determine_years_to_pull():
 
 
 def update_league_war():
+    print("UPDATING LEAGUE WAR", flush=True)
 
     num_years = determine_years_to_pull()
 
@@ -368,28 +377,47 @@ def update_league_war():
     print("YEARS TO ANALYZE: ", years)
 
     player_df = calculate_league_war(years)
-    player_df = player_df.drop(columns=["position"])
 
     # Getting existing players table
     fantasy_players = Players.get_all_players_df()
     fantasy_players = fantasy_players.drop(columns=["war", "value"])
 
     fantasy_players = fantasy_players.drop_duplicates(subset=["player_id"])
+
+    # Get sleeper ID for null values in player_df
+    null_player_df = player_df[player_df["sleeper_id"].isna()]
+    nonnull_player_df = player_df[~player_df["sleeper_id"].isna()]
+    fantasy_players_merge = fantasy_players[["player_id", "player", "position"]]
+    fantasy_players_merge = fantasy_players_merge.rename(
+        columns={"player": "pg_player", "position": "pg_position"}
+    )
+    null_player_df = null_player_df.drop(columns=["sleeper_id"])
+    fantasy_players_merge = fantasy_players_merge.rename(
+        columns={"player_id": "sleeper_id"}
+    )
+    new_player_df = null_player_df.merge(
+        fantasy_players_merge,
+        how="left",
+        left_on=["player_name", "position"],
+        right_on=["pg_player", "pg_position"],
+    )
+
+    keepcols = nonnull_player_df.columns
+    new_player_df = new_player_df[keepcols]
+
+    player_df = pd.concat([new_player_df, nonnull_player_df])
+
     player_df = player_df.drop_duplicates(subset=["sleeper_id"])
 
     try:
         # Merging
-        print("TRYING TO MERGE", flush=True)
+        player_df = player_df.drop(columns=["position", "player_name"])
         merged = fantasy_players.merge(
             player_df, how="left", left_on="player_id", right_on="sleeper_id"
         )
     except Exception as e:
         msg = traceback.print_exc()
         return msg
-
-    print("MERGED DF: ", merged.head(20))
-    print("MERGED DF COLUMNS: ", merged.columns)
-    print("MERGED DF INFO: ", merged.info())
 
     # Calculating value
     merged["salary"] = pd.to_numeric(merged["salary"])
