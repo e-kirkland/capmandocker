@@ -134,3 +134,5 @@ dmypy.json
 postgres_data
 postgres_data_prod
 web/postgres_data
+
+data
