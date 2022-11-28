@@ -321,7 +321,7 @@ def calculate_league_war(years=[2021, 2020, 2019]):
     # merged = merged.groupby("sleeper_id").head(20).reset_index(drop=True)
 
     # Limiting WAR to previous 6-game stretch
-    merged = merged.groupby("sleeper_id").head(6).reset_index(drop=True)
+    merged = merged.groupby("sleeper_id").head(20).reset_index(drop=True)
 
     player_df = calculate_all_players_war(
         merged, player_df, avg_df, avg_team_mean, avg_team_std
