@@ -234,9 +234,20 @@ def process_free_agent_transaction(transaction):
 
 def process_other_transaction(transaction):
 
-    adds = transaction["adds"]
-    drops = transaction["drops"]
-    budgets = transaction["waiver_budget"]
+    try:
+        adds = transaction["adds"]
+    except KeyError as e:
+        adds = None
+
+    try:
+        drops = transaction["drops"]
+    except KeyError as e:
+        drops = None
+
+    try:
+        budgets = transaction["waiver_budget"]
+    except KeyError as e:
+        budgets = None
 
     # Check if all values are populated, indicates likely trade
     if all(v is not None for v in [adds, drops]):
@@ -260,10 +271,12 @@ def process_other_transaction(transaction):
 
     else:
 
-        msg = process_roster_drops(drops)
+        if drops:
+            msg = process_roster_drops(drops)
         if len(budgets) == 0:
             budgets = None
-        msg = process_roster_adds(adds, budgets)
+        if adds:
+            msg = process_roster_adds(adds, budgets)
 
     return
 
@@ -311,12 +324,13 @@ def store_most_recent_transaction(leagueID, lastTransaction):
 
     return msg
 
+
 def check_league_compliance(cap, rosterMin, rosterMax):
-    
+
     # Get all rosters
     teamsdf = Rosters.get_all_rosters_df()
 
-    roster_ids = [x for x in teamsdf['roster_id']]
+    roster_ids = [x for x in teamsdf["roster_id"]]
 
     # Empty list for collecting problematic teams
     problemdata = []
@@ -326,18 +340,24 @@ def check_league_compliance(cap, rosterMin, rosterMax):
 
         # Get players for this roster
         teamdf = Players.get_df_by_roster_id(id)
-        rosterdf = teamdf[teamdf["injured_reserve"]==False]
+        rosterdf = teamdf[teamdf["injured_reserve"] == False]
         players_total = len(rosterdf)
         teamsalary = Players.get_roster_salary_sum(id)
         print(f"SALARY: cap ${cap}, total: ${teamsalary}", flush=True)
-        print(f"PLAYER TOTAL: min: {rosterMin}, max: {rosterMax}, roster: {players_total}", flush=True)
+        print(
+            f"PLAYER TOTAL: min: {rosterMin}, max: {rosterMax}, roster: {players_total}",
+            flush=True,
+        )
 
         if (
             (int(teamsalary) > int(cap))
             | (int(players_total) < rosterMin)
             | (int(players_total) > rosterMax)
         ):
-            print(f"{team_name} NOT IN COMPLIANCE: {teamsalary}, {players_total}", flush=True)
+            print(
+                f"{team_name} NOT IN COMPLIANCE: {teamsalary}, {players_total}",
+                flush=True,
+            )
 
             error_team = [team_name, teamsalary, players_total]
             problemdata.append(error_team)
